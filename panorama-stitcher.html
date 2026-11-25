@@ -1,0 +1,2566 @@
+<!DOCTYPE html>
+<html lang="en"><head><script data-bard-client-injected="true">(function(firebaseConfig, initialAuthToken, appId) {
+        window.__firebase_config = firebaseConfig;
+        window.__initial_auth_token = initialAuthToken;
+        window.__app_id = appId;
+            })("\n{\n  \"apiKey\": \"AIzaSyCqyCcs2R2e7AegGjvFAwG98wlamtbHvZY\",\n  \"authDomain\": \"bard-frontend.firebaseapp.com\",\n  \"projectId\": \"bard-frontend\",\n  \"storageBucket\": \"bard-frontend.firebasestorage.app\",\n  \"messagingSenderId\": \"175205271074\",\n  \"appId\": \"1:175205271074:web:2b7bd4d34d33bf38e6ec7b\"\n}\n","eyJhbGciOiJSUzI1NiIsImtpZCI6IjExNjRiNzdiNDMzZDdhMDAyMWI4NjE4YjhjYTU3ZTMyZGI5MWUxMTMiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BiYXJkLWZyb250ZW5kLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwiYXVkIjoiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCJ1aWQiOiIxNTMwNTQyMzc4MjA0NTgxODU0OCIsImlzcyI6ImZpcmViYXNlLWFkbWluc2RrLWZic3ZjQGJhcmQtZnJvbnRlbmQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJjbGFpbXMiOnsiYXBwSWQiOiJjX2NjMjI4NDczYjg3YzAzY2FfcGFub3JhbWEtc3RpdGNoZXIuaHRtbC05NzMifSwiZXhwIjoxNzk1NjA2NzEzLCJpYXQiOjE3OTU2MDMxMTMsImFsZyI6IlJTMjU2In0.AF4N7rXoSJPBcxwnDSDhwq7Y8fwZYUPz1xhmn55LOJHhAzQBOwbpto413T-QZF_eivc79Jq_H1ff5-yWup9yOl87pgwxefm_ohN2d96N6z0kR5jrX9HUzgqTV44zdXKX6tuyg1i7RpRgGCHdtZDWGnVhJ-9YF-2FLJCupZKIFyLF7NnGLfVCs8HIju_ujSsPQHPtRKDcFOX1CQvNGXfKFcPiAI0RLpt2jknkbt2Ns31VAN1ot-JFYEDBg3u5-1cN0M-VjjnWeaWZP-FrL1fjrfzb95dLIk_5bsalrxFEGrrnoY_wT3o4ukLKiEpq1TLsHZrVl0L2ixR_Z80Taguojg","c_cc228473b87c03ca_panorama-stitcher.html-973")</script><script data-bard-client-injected="true">
+  document.addEventListener('input', (event) => {
+    if (event.target && (event.target.isContentEditable || event.target.hasAttribute('contenteditable'))) {
+      const clonedDoc = document.cloneNode(true);
+      const injectedScripts = clonedDoc.querySelectorAll('[data-bard-client-injected="true"]');
+      injectedScripts.forEach(el => el.remove());
+      window.parent.postMessage({
+        type: 'inlineEdit',
+        html: '<!DOCTYPE html>\n' + clonedDoc.documentElement.outerHTML
+      }, '*');
+    }
+  });
+</script><script data-bard-client-injected="true">(function(){'use strict';window.addEventListener("message",a=>{a.data&&a.data.type==="SUPPLEMENTAL_DATA_UPDATE"&&window.dispatchEvent(new CustomEvent("supplementaldataupdate",{detail:a.data.data}))});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const SCROLL_KEYS = new Set([
+    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    ' ', 'Spacebar', 'PageUp', 'PageDown', 'Home', 'End',
+  ]);
+  const HORIZONTAL_KEYS = new Set(['ArrowLeft', 'ArrowRight']);
+
+  function isTextEntryTarget(target) {
+    if (!target) return false;
+    const tagName = target.tagName;
+    return tagName === 'INPUT' || tagName === 'TEXTAREA' ||
+        tagName === 'SELECT' || target.isContentEditable === true;
+  }
+
+  // An element absorbs the key only if it both overflows on the axis being
+  // scrolled and is configured to scroll on that axis. The cheap dimension
+  // test runs first because getComputedStyle forces a style recalc, and this
+  // runs on every keypress. Each axis is read from its own longhand: the
+  // 'overflow' shorthand serializes as two values when the axes differ, which
+  // is the common 'overflow-x: hidden; overflow-y: auto' pane.
+  function canScroll(node, horizontal) {
+    const overflows = horizontal ? node.scrollWidth > node.clientWidth
+                                 : node.scrollHeight > node.clientHeight;
+    if (!overflows) return false;
+    const style = window.getComputedStyle(node);
+    const overflow = horizontal ? style.overflowX : style.overflowY;
+    return overflow === 'auto' || overflow === 'scroll';
+  }
+
+  // Walks up from the event target so nested scrollers keep their behavior.
+  // <body> is included because pages that pin the root height make it the
+  // scroll container.
+  function hasScrollableAncestor(target, horizontal) {
+    let node = target;
+    while (node && node !== document.documentElement) {
+      if (canScroll(node, horizontal)) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function rootCanScroll(horizontal) {
+    const scroller = document.scrollingElement || document.documentElement;
+    if (!scroller) return false;
+    // Tolerate a pixel of rounding so subpixel layouts do not look scrollable.
+    return horizontal ? scroller.scrollWidth > window.innerWidth + 1
+                      : scroller.scrollHeight > window.innerHeight + 1;
+  }
+
+  window.addEventListener('keydown', function(event) {
+    if (!SCROLL_KEYS.has(event.key)) return;
+    if (event.defaultPrevented) return;
+    // Alt and Meta turn arrows into browser history navigation, and Ctrl is
+    // reserved for shortcuts, so none of them are scroll intent.
+    if (event.altKey || event.metaKey || event.ctrlKey) return;
+
+    const target = event.target;
+    if (isTextEntryTarget(target)) return;
+
+    // Anything that can still absorb the scroll gets to keep it.
+    const horizontal = HORIZONTAL_KEYS.has(event.key);
+    if (rootCanScroll(horizontal)) return;
+    if (hasScrollableAncestor(target, horizontal)) return;
+
+    event.preventDefault();
+  }, {capture: true, passive: false});
+})();</script><script data-bard-client-injected="true">(function() {
+  // Ensure this script is executed only once
+  if (window.firebaseAuthBridgeScriptLoaded) {
+    return;
+  }
+  window.firebaseAuthBridgeScriptLoaded = true;
+
+  let nextTokenPromiseId = 0;
+
+  // Stores { resolve, reject } for ongoing token requests
+  const pendingTokenPromises = {};
+
+  // Listen for messages from the Host Application
+  window.addEventListener('message', function(event) {
+
+    const messageData = event.data;
+
+  if (messageData && messageData.type === 'RESOLVE_NEW_FIREBASE_TOKEN') {
+      const { success, token, error, promiseId } = messageData ?? {};
+      if (pendingTokenPromises[promiseId]) {
+        if (success) {
+          pendingTokenPromises[promiseId].resolve(token);
+        } else {
+          pendingTokenPromises[promiseId].reject(new Error(error || 'Token refresh failed from host.'));
+        }
+        delete pendingTokenPromises[promiseId];
+      }
+    }
+  });
+
+  // Expose a function for the Generated App to request a new Firebase token
+  window.requestNewFirebaseToken = function() {
+    const currentPromiseId = nextTokenPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingTokenPromises[currentPromiseId] = { resolve, reject };
+    });
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'REQUEST_NEW_FIREBASE_TOKEN',
+        promiseId: currentPromiseId
+      }, '*');
+    } else {
+      pendingTokenPromises[currentPromiseId].reject(new Error('No parent window to request token from.'));
+      delete pendingTokenPromises[currentPromiseId];
+    }
+    return promise;
+  };
+})();</script><script data-bard-client-injected="true">
+let realOriginalGetUserMedia = null;
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  realOriginalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+}
+
+(function() {
+  if (navigator.mediaDevices && navigator.mediaDevices.__proto__) {
+    try {
+      Object.defineProperty(navigator.mediaDevices.__proto__, 'getUserMedia', {
+        get: function() {
+          return undefined; // Or throw an error
+        },
+        configurable: false
+      });
+    } catch (error) {
+      console.error("Error defining prototype getter:", error);
+    }
+  }
+})();
+
+(function() {
+  const pendingMediaResolvers = {};
+  let nextMediaPromiseId = 0;
+
+  function requestMediaPermissions(constraints) {
+    const mediaPromiseId = nextMediaPromiseId++;
+    const promise = new Promise((resolve, reject) => {
+      pendingMediaResolvers[mediaPromiseId] = (granted) => {
+        delete pendingMediaResolvers[mediaPromiseId];
+        resolve(granted);
+      };
+    });
+
+    window.parent.postMessage({
+      type: 'requestMediaPermission',
+      constraints: constraints,
+      promiseId: mediaPromiseId,
+    }, '*');
+
+    return promise;
+  }
+
+  let originalGetUserMedia = realOriginalGetUserMedia;
+
+  function interceptGetUserMedia() {
+    if (navigator.mediaDevices) {
+      Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+        value: function(constraints) {
+          return requestMediaPermissions(constraints).then((granted) => {
+            if (granted) {
+              if (originalGetUserMedia) {
+                return originalGetUserMedia(constraints);
+              } else {
+                throw new Error("Original getUserMedia not available.");
+              }
+            } else {
+              throw new DOMException('Permission denied', 'NotAllowedError');
+            }
+          });
+        },
+        writable: false,
+        configurable: false
+      });
+    }
+  }
+
+  interceptGetUserMedia();
+
+  const observer = new MutationObserver(function(mutationsList, observer) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'reconfigured' && mutation.name === 'getUserMedia' && mutation.object === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'attributes' && mutation.attributeName === 'getUserMedia' && mutation.target === navigator.mediaDevices) {
+        interceptGetUserMedia();
+      } else if (mutation.type === 'childList' && mutation.addedNodes) {
+        mutation.addedNodes.forEach(node => {
+          if (node === navigator.mediaDevices) {
+            interceptGetUserMedia();
+          }
+        });
+      }
+    }
+  });
+
+  function interceptSpeechRecognition() {
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+      return;
+    }
+
+    const OriginalSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const SpeechRecognitionWrapper = function(...args) {
+      const recognizer = new OriginalSpeechRecognition(...args);
+      const originalStart = recognizer.start.bind(recognizer);
+
+      recognizer.start = function() {
+        requestMediaPermissions({ audio: true }).then(granted => {
+          if (granted) {
+            originalStart();
+          } else {
+            const errorEvent = new SpeechRecognitionErrorEvent('error');
+            errorEvent.error = 'not-allowed'; // This is the standard error for permission denial.
+            recognizer.dispatchEvent(errorEvent);
+          }
+        });
+      };
+
+      return recognizer;
+    };
+
+    SpeechRecognitionWrapper.prototype = OriginalSpeechRecognition.prototype;
+    SpeechRecognitionWrapper.prototype.constructor = SpeechRecognitionWrapper;
+
+    if (window.SpeechRecognition) {
+      window.SpeechRecognition = SpeechRecognitionWrapper;
+    }
+    if (window.webkitSpeechRecognition) {
+      window.webkitSpeechRecognition = SpeechRecognitionWrapper;
+    }
+  }
+
+  interceptSpeechRecognition();
+
+  window.addEventListener('message', function(event) {
+    if (event.data) {
+      if (event.data.type === 'resolveMediaPermission') {
+        const { promiseId, granted } = event.data;
+        if (pendingMediaResolvers[promiseId]) {
+          pendingMediaResolvers[promiseId](granted);
+        }
+      }
+    }
+  });
+
+})();</script><script ws-interception-config="{&quot;parentOrigin&quot;:&quot;https://gemini.google.com&quot;,&quot;proxiedDomains&quot;:[]}" data-bard-client-injected="true">(function(){'use strict';var u=typeof Object.defineProperties=="function"?Object.defineProperty:function(b,d,e){if(b==Array.prototype||b==Object.prototype)return b;b[d]=e.value;return b};function v(b){b=["object"==typeof globalThis&&globalThis,b,"object"==typeof window&&window,"object"==typeof self&&self,"object"==typeof global&&global];for(var d=0;d<b.length;++d){var e=b[d];if(e&&e.Math==Math)return e}throw Error("Cannot find global object");}var w=v(this);
+function y(b,d){if(d)a:{var e=w;b=b.split(".");for(var h=0;h<b.length-1;h++){var k=b[h];if(!(k in e))break a;e=e[k]}b=b[b.length-1];h=e[b];d=d(h);d!=h&&d!=null&&u(e,b,{configurable:!0,writable:!0,value:d})}}function z(b){function d(h){return b.next(h)}function e(h){return b.throw(h)}return new Promise(function(h,k){function m(n){n.done?h(n.value):Promise.resolve(n.value).then(d,e).then(m,k)}m(b.next())})}y("globalThis",function(b){return b||w});/*
+
+ Copyright The Closure Library Authors.
+ SPDX-License-Identifier: Apache-2.0
+*/
+function A(b,d){function e(){}e.prototype=d.prototype;b.i=d.prototype;b.prototype=new e;b.prototype.constructor=b;b.h=function(h,k,m){for(var n=Array(arguments.length-2),p=2;p<arguments.length;p++)n[p-2]=arguments[p];return d.prototype[k].apply(h,n)}};function B(b,d,e="*"){function h(a){if(typeof a==="string")return F.encode(a).buffer;if(a instanceof ArrayBuffer)return a.slice(0);if(ArrayBuffer.isView(a))return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);throw Error("Invalid data type");}function k(a){a=h(a);var f={type:"send",data:new Uint8Array(a)},g;(g=r)==null||g.postMessage(f,[a])}function m(){if(!r)throw Error("Data port not captured yet.");r.onmessage=a=>{if(a.data.type==="message"){a=new MessageEvent("message",{data:G.decode(a.data.data)});
+let f;(f=c.onmessage)==null||f.call(c,a);c.dispatchEvent(a)}}}function n(){if(!t)throw Error("Control port not captured yet.");t.onmessage=a=>{switch(a.data.type){case "open":l=1;var f=new Event("open"),g;(g=c.onopen)==null||g.call(c,f);c.dispatchEvent(f);q.forEach(H=>{k(H)});q=[];break;case "close":g=a.data;l=3;g=new CloseEvent("close",{code:g.code,reason:g.reason,wasClean:g.wasClean});(f=c.onclose)==null||f.call(c,g);c.dispatchEvent(g);break;case "error":l=3;f=new Event("error");let x;(x=c.onerror)==
+null||x.call(c,f);c.dispatchEvent(f)}}}function p(a){return z(function*(){var f=new MessageChannel;t=f.port1;var g=new MessageChannel;r=g.port1;n();m();window.parent.postMessage({type:"websocket_open",portOrdering:["control","data"],url:b,protocols:a||[],connectionId:I},e,[f.port2,g.port2])}())}var c=Reflect.construct(EventTarget,[],new.target);c.CONNECTING=0;c.OPEN=1;c.CLOSING=2;c.CLOSED=3;c.url=b;c.binaryType="arraybuffer";c.protocol="";c.extensions="";var l=0,t=null,r=null,q=[],F=new TextEncoder,
+G=new TextDecoder;c.onopen=null;c.onmessage=null;c.onclose=null;c.onerror=null;Object.defineProperty(c,"readyState",{get:()=>l,enumerable:!0,configurable:!0});Object.defineProperty(c,"bufferedAmount",{get:()=>{var a=0;q.forEach(f=>{a+=typeof f==="string"?f.length:f.byteLength});return a},enumerable:!0,configurable:!0});var I=function(){var a;return((a=globalThis.crypto)==null?0:a.randomUUID)?globalThis.crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,f=>{var g=Math.random()*
+16|0;return(f==="x"?g:g&3|8).toString(16)})}();c.send=a=>{if(l===1)a instanceof Blob?a.arrayBuffer().then(f=>{k(f)}):k(a);else if(l===0)if(typeof a==="string")q.push(a);else if(a instanceof ArrayBuffer||ArrayBuffer.isView(a))q.push(h(a));else throw Error("Sending Blob is not supported before the connection is open.");else console.debug("WebSocket send called in CLOSING or CLOSED state; ignored.")};c.close=(a=1E3,f="")=>{if(l!==2&&l!==3){l=2;a={type:"close",code:a,reason:f,wasClean:a===1E3};var g;
+(g=t)==null||g.postMessage(a)}};Promise.resolve().then(()=>p(d));return c}A(B,EventTarget);var C=document.currentScript,D=C==null?void 0:C.getAttribute("ws-interception-config");if(!D)throw Error("WebSocket Interceptor: Missing ws-interception-config attribute in the script tag.");var E=JSON.parse(D);if(!E.parentOrigin||typeof E.parentOrigin!=="string")throw Error("WebSocket Interceptor: Invalid parentOrigin in ws-interception-config");
+(function(b){var d=Object.getOwnPropertyDescriptor(window,"WebSocket");if(!d||d.writable||d.configurable)d=Object.assign(function(e,h){try{let k=(new URL(e)).hostname;if(b.proxiedDomains.some(m=>k===m||k.endsWith(`.${m}`)))return new B(e,h,b.parentOrigin)}catch(k){throw window.parent.postMessage({type:"websocket_blocked",url:e,reason:"blocked_invalid_url"},b.parentOrigin),new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");}window.parent.postMessage({type:"websocket_blocked",
+url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMException(`WebSocket connection to '${e}' is not allowed in Canvas.`,"SecurityError");},{CONNECTING:0,OPEN:1,CLOSING:2,CLOSED:3}),Object.defineProperty(window,"WebSocket",{value:d,writable:!1,configurable:!1})})({proxiedDomains:E.proxiedDomains||[],parentOrigin:E.parentOrigin});}).call(this);
+</script><script data-bard-client-injected="true">((function(modelInformation) {
+  const originalFetch = window.fetch;
+  // TODO: b/421908508 - Move these out of the script and match all generative AI model calls.
+  let googleLlmBaseApiUrls = [
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':streamGenerateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageEditModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageTransformModelName + ':generateContent',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.ttsModelName + ':generateContent',
+  ];
+  modelInformation.deprecatedTextModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+    );
+  });
+  modelInformation.deprecatedImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predict',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predictLongRunning',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedGenerateImageModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+  modelInformation.deprecatedImageTransformModelNames.forEach((modelName) => {
+    googleLlmBaseApiUrls.push(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+    );
+  });
+
+  const pendingFetchResolvers = {};
+  let nextPromiseId = 0;
+
+  function handleStringInput(input, optionsArgument) {
+    const actualUrl = input;
+    const fetchCallArgs = [actualUrl, optionsArgument];
+    const effectiveOptions = optionsArgument || {};
+    const bodyForApiKeyCheck = effectiveOptions.body;
+    const bodyForPostMessage = effectiveOptions.body;
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  function handleRequestInput(input, optionsArgument) {
+    const actualUrl = input.url;
+    const fetchCallArgs = [input, optionsArgument];
+    const effectiveOptions = { method: input.method, headers: new Headers(input.headers) };
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (optionsArgument) {
+      if (optionsArgument.method) effectiveOptions.method = optionsArgument.method;
+      if (optionsArgument.headers) effectiveOptions.headers = new Headers(optionsArgument.headers);
+      if ('body' in optionsArgument) {
+        bodyForApiKeyCheck = optionsArgument.body;
+        bodyForPostMessage = optionsArgument.body;
+      } else {
+        bodyForApiKeyCheck = undefined;
+        bodyForPostMessage = input.body;
+      }
+    } else {
+      bodyForApiKeyCheck = undefined;
+      bodyForPostMessage = input.body;
+    }
+    return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+  }
+
+  window.fetch = function(input, optionsArgument) {
+    let actualUrl;
+    let fetchCallArgs;
+    let effectiveOptions = {};
+    let bodyForApiKeyCheck;
+    let bodyForPostMessage;
+
+    if (typeof input === 'string') {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleStringInput(input, optionsArgument));
+    } else if (input instanceof Request) {
+      ({actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage} = handleRequestInput(input, optionsArgument));
+    } else {
+      return originalFetch.apply(window, [input, optionsArgument]);
+    }
+
+    effectiveOptions.method = effectiveOptions.method || 'GET';
+    if (!effectiveOptions.headers) {
+      effectiveOptions.headers = new Headers();
+    }
+
+
+    if (typeof actualUrl === 'string' && googleLlmBaseApiUrls.some((url) => actualUrl.startsWith(url))) {
+      let apiKeyIsNull = true;
+
+      const regex = new RegExp("models/([^:]+)");
+      const modelNameMatch = actualUrl.match(regex);
+      const modelName = modelNameMatch ? modelNameMatch[1] : 'unspecified';
+
+
+      try {
+        const urlObject = new URL(actualUrl);  // Use URL object for robust parsing
+        const apiKeyParam = urlObject.searchParams.get('key');
+        if (apiKeyParam) {
+          apiKeyIsNull = false;
+        }
+      } catch (e) {
+        // Continue checks even if URL parsing fails
+      }
+
+      if (apiKeyIsNull && effectiveOptions.headers) {
+        const h = new Headers(effectiveOptions.headers);
+        const apiKeyHeaderValue = h.get('X-API-Key') || h.get('x-api-key');
+        if (apiKeyHeaderValue) {
+          apiKeyIsNull = false;
+          return originalFetch.apply(window, fetchCallArgs);
+        }
+      }
+
+      if (apiKeyIsNull && effectiveOptions.method && ['POST', 'PUT', 'PATCH'].includes(effectiveOptions.method.toUpperCase()) && typeof bodyForApiKeyCheck === 'string') {
+        try {
+          const bodyData = JSON.parse(bodyForApiKeyCheck);
+          if (bodyData && bodyData.apiKey) {
+            apiKeyIsNull = false;
+            return originalFetch.apply(window, fetchCallArgs);
+          }
+        } catch (e) {
+          // Ignore JSON parsing errors
+        }
+      }
+
+      if(apiKeyIsNull) {
+        const promiseId = nextPromiseId++;
+        const promise = new Promise((resolve) => {
+          pendingFetchResolvers[promiseId] = (resolvedResponse) => {
+            delete pendingFetchResolvers[promiseId];
+            resolve(resolvedResponse);
+          };
+        });
+
+        let serializedBodyForPostMessage;
+        if (typeof bodyForPostMessage === 'string' || bodyForPostMessage == null) {
+            serializedBodyForPostMessage = bodyForPostMessage;
+        } else if (bodyForPostMessage instanceof ReadableStream) {
+            serializedBodyForPostMessage = null;
+        } else {
+            try {
+                serializedBodyForPostMessage = JSON.stringify(bodyForPostMessage);
+            } catch (e) {
+                serializedBodyForPostMessage = null;
+            }
+        }
+
+        const messageOptions = {
+            method: effectiveOptions.method,
+            headers: Object.fromEntries(new Headers(effectiveOptions.headers).entries()),
+            body: serializedBodyForPostMessage
+        };
+
+        window.parent.postMessage({
+          type: 'requestFetch',
+          url: actualUrl,
+          modelName: modelName,
+          options: messageOptions,
+          promiseId: promiseId,
+        }, '*');
+
+        return promise;
+      }
+      return originalFetch.apply(window, fetchCallArgs);
+    }
+    return originalFetch.apply(window, fetchCallArgs);
+  };
+
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'resolveFetch') {
+      const { promiseId, response } = event.data;
+      if (pendingFetchResolvers[promiseId]) {
+        try {
+          const reconstructedResponse = new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers),
+          });
+          pendingFetchResolvers[promiseId](reconstructedResponse);
+        } catch (error) {
+          pendingFetchResolvers[promiseId](new Response(null, { status: 500, statusText: "Interceptor Response Reconstruction Error" }));
+        }
+      }
+    }
+  });
+
+}))({"textModelName":"gemini-3-flash-preview","imageModelName":"imagen-4.0-generate-001","imageEditModelName":"gemini-3.1-flash-image","imageTransformModelName":"gemini-3-pro-image","videoModelName":"veo-2.0-generate-001","ttsModelName":"gemini-2.5-flash-preview-tts","deprecatedTextModelNames":["gemini-2.0-flash","gemini-2.5-flash","gemini-2.5-flash-preview-04-17","gemini-2.5-flash-preview-05-20","gemini-2.5-flash-preview-09-2025"],"deprecatedImageModelNames":["imagen-3.0-generate-001","imagen-3.0-generate-002"],"deprecatedGenerateImageModelNames":["gemini-2.5-flash-image-preview","gemini-2.5-flash-image","gemini-3.1-flash-image-preview"],"deprecatedImageTransformModelNames":["gemini-3-pro-image-preview-11-2025"]})</script><script data-bard-client-injected="true">(function() {
+  const OVERLAY_SELECTOR =
+    'dialog[open], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="combobox"]';
+
+  function isVisibleOverlay(element) {
+    if (element.closest('[hidden], [aria-hidden="true"], [inert]')) {
+      return false;
+    }
+    if (window.getComputedStyle(element).visibility === 'hidden') {
+      return false;
+    }
+    for (let cur = element; cur; cur = cur.parentElement) {
+      if (window.getComputedStyle(cur).display === 'none') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function hasOpenOverlay() {
+    const candidates = document.querySelectorAll(OVERLAY_SELECTOR);
+    for (let i = 0; i < candidates.length; i++) {
+      if (isVisibleOverlay(candidates[i])) {
+        return true;
+      }
+    }
+    try {
+      if (document.querySelector('[popover]:popover-open')) {
+        return true;
+      }
+    } catch (e) {
+      // Ignore engines that do not support :popover-open.
+    }
+    return false;
+  }
+
+  function isNonEmptySearchInput(target) {
+    return (
+      Boolean(target) &&
+      target.tagName === 'INPUT' &&
+      typeof target.type === 'string' &&
+      target.type.toLowerCase() === 'search' &&
+      typeof target.value === 'string' &&
+      target.value.length > 0
+    );
+  }
+
+  function shouldIgnoreEscape(event) {
+    return (
+      event.key !== 'Escape' ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.repeat ||
+      event.keyCode === 229 ||
+      isNonEmptySearchInput(event.target)
+    );
+  }
+
+  let shouldIgnoreCaptureState = false;
+
+  window.addEventListener(
+    'keydown',
+    function(event) {
+      if (event.key === 'Escape') {
+        shouldIgnoreCaptureState =
+          hasOpenOverlay() || isNonEmptySearchInput(event.target);
+      }
+    },
+    {capture: true},
+  );
+
+  window.addEventListener('keydown', function(event) {
+    if (
+      shouldIgnoreEscape(event) ||
+      event.defaultPrevented ||
+      shouldIgnoreCaptureState
+    ) {
+      return;
+    }
+    const wasBlockedOnCapture = shouldIgnoreCaptureState;
+    queueMicrotask(function() {
+      if (event.defaultPrevented || wasBlockedOnCapture) {
+        return;
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({'type': 'escapeKey'}, '*');
+      }
+    });
+  });
+})();</script><script data-bard-client-injected="true">(function() {
+  function normalizeSlug(str) {
+    try {
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/[^p{L}p{N}s_-]/gu, '')
+        .replace(/s+/g, '-');
+    } catch (e) {
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9s_-]/g, '')
+        .replace(/s+/g, '-');
+    }
+  }
+
+  function findTargetElement(hash) {
+    if (!hash || hash === '#') {
+      return null;
+    }
+    const rawId = hash.startsWith('#') ? hash.slice(1) : hash;
+    let decodedId = rawId;
+    try {
+      decodedId = decodeURIComponent(rawId);
+    } catch (e) {
+      // Ignore URI malformed errors.
+    }
+
+    // 1. Direct ID match (raw and decoded).
+    let target = document.getElementById(rawId) || document.getElementById(decodedId);
+    if (target) {
+      return target;
+    }
+
+    // 2. Name attribute match (<a name="...">).
+    try {
+      if (typeof CSS !== 'undefined' && CSS.escape) {
+        target =
+          document.querySelector('[name="' + CSS.escape(rawId) + '"]') ||
+          document.querySelector('[name="' + CSS.escape(decodedId) + '"]');
+      } else {
+        const namedElements = document.getElementsByName(rawId);
+        if (namedElements && namedElements.length > 0) {
+          return namedElements[0];
+        }
+      }
+    } catch (e) {
+      // Ignore querySelector syntax errors.
+    }
+    if (target) {
+      return target;
+    }
+
+    // 3. Match heading text by slug (for Markdown TOCs where headings lack explicit IDs).
+    const targetSlug = normalizeSlug(decodedId);
+    if (targetSlug) {
+      for (const heading of document.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
+        if (normalizeSlug(heading.textContent || '') === targetSlug) {
+          return heading;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  document.addEventListener('click', function(event) {
+    const target = event.target;
+    const anchor = target && typeof target.closest === 'function' ? target.closest('a') : null;
+    if (!anchor) {
+      return;
+    }
+
+    const href = anchor.getAttribute('href');
+    if (
+      !href ||
+      href.trim().toLowerCase().startsWith('javascript:') ||
+      anchor.hasAttribute('download')
+    ) {
+      return;
+    }
+
+    // Check if the link is an in-page hash / anchor link.
+    if (href.startsWith('#')) {
+      event.preventDefault();
+      const targetElement = findTargetElement(href);
+      if (targetElement) {
+        targetElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }
+      return;
+    }
+
+    // Check if the URL has the same origin/pathname but with a hash.
+    try {
+      const url = new URL(anchor.href, window.location.href);
+      if (
+        url.hash &&
+        url.origin === window.location.origin &&
+        url.pathname === window.location.pathname
+      ) {
+        event.preventDefault();
+        const targetElement = findTargetElement(url.hash);
+        if (targetElement) {
+          targetElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+        return;
+      }
+    } catch (e) {
+      // Fall through if URL parsing fails.
+    }
+
+    // For all external or full navigation links, prevent iframe-level navigation
+    // (which breaks in AGSA WebView or sandboxed iframes) and ensure they open
+    // safely in a new tab/window.
+    if (anchor.target !== '_blank') {
+      event.preventDefault();
+      window.open(anchor.href, '_blank', 'noopener,noreferrer');
+    }
+  }, {capture: true});
+})();</script><script data-bard-client-injected="true">(function(){'use strict';function a(){window.parent.postMessage({type:"interaction"},"*")}window.addEventListener("click",a,{capture:!0,passive:!0});window.addEventListener("touchstart",a,{capture:!0,passive:!0});window.addEventListener("keydown",a,{capture:!0,passive:!0});}).call(this);
+</script><script data-bard-client-injected="true">(function() {
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+
+    /**
+   * Normalizes an error event or a promise rejection reason into a structured error object.
+   * @param {*} errorEventOrReason The error object or reason.
+   * @return {object} Structured error data { message, name, stack }.
+   */
+  function getErrorObject(errorEventOrReason) {
+    if (errorEventOrReason instanceof Error) {
+      return {
+        message: errorEventOrReason.message,
+        name: errorEventOrReason.name,
+        stack: errorEventOrReason.stack,
+      };
+    }
+    // Fallback for non-Error objects.
+    try {
+      return {
+        message: JSON.stringify(errorEventOrReason),
+        name: 'UnknownErrorType',
+        stack: null,
+      };
+    } catch (e) {
+      return {
+        message: String(errorEventOrReason),
+        name: 'UnknownErrorTypeNonStringifiable',
+        stack: null,
+      };
+    }
+  }
+
+  /**
+   * Converts an array of arguments (from log/error) into a single string.
+   * Handles Error objects specially to include their message and stack.
+   * @param {Array<*>} args - Arguments passed to console methods.
+   * @return {string} A string representation of the arguments.
+   */
+  function stringifyArgs(args) {
+    return args
+      .map((arg) => {
+        if (arg instanceof Error) {
+          const {message, stack} = arg;
+          return `Error: ${message}${stack ? ('\nStack: ' + stack) : ''}`;
+        }
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            return JSON.stringify(arg);
+          } catch (error) {
+            return '[Circular Object]';
+          }
+        } else {
+          return String(arg);
+        }
+      })
+      .join(' ');
+  }
+
+  console.log = function(...args) {
+    const logString = stringifyArgs(args);
+    window.parent.postMessage({ type: 'log', message: logString }, '*');
+    originalConsoleLog.apply(console, args);
+  };
+
+  console.error = function(...args) {
+    let errorData;
+    if (args.length > 0 && args[0] instanceof Error) {
+      const err = args[0];
+      // If the first arg is an Error, capture its details.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        ...getErrorObject(err),
+        rawArgsString: stringifyArgs(args.slice(1)),
+        timestamp: new Date().toISOString(),
+      };
+    } else {
+      // If not an Error object, treat all args as a general error message.
+      errorData = {
+        type: 'error',
+        source: 'CONSOLE_ERROR',
+        message: stringifyArgs(args),
+        name: 'ConsoleLoggedError',
+        stack: null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+    window.parent.postMessage(errorData, '*');
+    originalConsoleError.apply(console, args);
+  };
+
+  // Listen for global unhandled synchronous errors.
+  window.addEventListener('error', function(event) {
+    const errorDetails = event.error ? getErrorObject(event.error) : {
+      message: event.message,
+      name: 'GlobalError',
+      stack: null,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    };
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'global',
+      ...errorDetails,
+      message: errorDetails.message || event.message,
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+  // Listen for unhandled promise rejections (asynchronous errors).
+  window.addEventListener('unhandledrejection', function(event) {
+    const errorDetails = getErrorObject(event.reason);
+
+    window.parent.postMessage({
+      type: 'error',
+      source: 'unhandledrejection',
+      ...errorDetails,
+      message: errorDetails.message || 'Unhandled Promise Rejection',
+      timestamp: new Date().toISOString(),
+    }, '*');
+  });
+
+})();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panorama Studio — Client-Side Image Stitcher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    /* Custom checkerboard background for transparent/cropped panorama preview */
+    .checkerboard {
+      background-color: #0f172a;
+      background-image:
+        linear-gradient(45deg, #1e293b 25%, transparent 25%),
+        linear-gradient(-45deg, #1e293b 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1e293b 75%),
+        linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    /* Smooth subtle spinner */
+    @keyframes spinSlow {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spinSlow 1.2s linear infinite;
+    }
+  </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Inter, system-ui, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border-width:0}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0px}.bottom-5{bottom:1.25rem}.right-5{right:1.25rem}.top-0{top:0px}.z-20{z-index:20}.z-30{z-index:30}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-2{height:0.5rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-7{height:1.75rem}.h-auto{height:auto}.max-h-\[65vh\]{max-height:65vh}.min-h-\[280px\]{min-height:280px}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-2{width:0.5rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-7{width:1.75rem}.w-auto{width:auto}.w-full{width:100%}.max-w-6xl{max-width:72rem}.max-w-full{max-width:100%}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.cursor-pointer{cursor:pointer}.touch-manipulation{touch-action:manipulation}.select-none{-webkit-user-select:none;user-select:none}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-2\.5{gap:0.625rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.self-start{align-self:flex-start}.overflow-hidden{overflow:hidden}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-4{border-width:4px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-amber-500\/40{border-color:rgb(245 158 11 / 0.4)}.border-brand-500\/30{border-color:rgb(99 102 241 / 0.3)}.border-emerald-500\/20{border-color:rgb(16 185 129 / 0.2)}.border-rose-500\/20{border-color:rgb(244 63 94 / 0.2)}.border-slate-600{--tw-border-opacity:1;border-color:rgb(71 85 105 / var(--tw-border-opacity, 1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85 / var(--tw-border-opacity, 1))}.border-slate-700\/80{border-color:rgb(51 65 85 / 0.8)}.border-slate-800{--tw-border-opacity:1;border-color:rgb(30 41 59 / var(--tw-border-opacity, 1))}.border-slate-800\/80{border-color:rgb(30 41 59 / 0.8)}.border-t-brand-500{--tw-border-opacity:1;border-top-color:rgb(99 102 241 / var(--tw-border-opacity, 1))}.bg-amber-500\/20{background-color:rgb(245 158 11 / 0.2)}.bg-amber-900\/80{background-color:rgb(120 53 15 / 0.8)}.bg-amber-950\/90{background-color:rgb(69 26 3 / 0.9)}.bg-brand-500\/20{background-color:rgb(99 102 241 / 0.2)}.bg-brand-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-emerald-500\/10{background-color:rgb(16 185 129 / 0.1)}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-rose-500\/10{background-color:rgb(244 63 94 / 0.1)}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.bg-slate-800\/80{background-color:rgb(30 41 59 / 0.8)}.bg-slate-800\/90{background-color:rgb(30 41 59 / 0.9)}.bg-slate-900\/70{background-color:rgb(15 23 42 / 0.7)}.bg-slate-900\/90{background-color:rgb(15 23 42 / 0.9)}.bg-slate-950{--tw-bg-opacity:1;background-color:rgb(2 6 23 / var(--tw-bg-opacity, 1))}.bg-slate-950\/60{background-color:rgb(2 6 23 / 0.6)}.bg-slate-950\/85{background-color:rgb(2 6 23 / 0.85)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-brand-500{--tw-gradient-from:#6366f1 var(--tw-gradient-from-position);--tw-gradient-to:rgb(99 102 241 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-brand-600{--tw-gradient-from:#4f46e5 var(--tw-gradient-from-position);--tw-gradient-to:rgb(79 70 229 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-purple-600{--tw-gradient-to:#9333ea var(--tw-gradient-to-position)}.p-3{padding:0.75rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pt-5{padding-top:1.25rem}.text-center{text-align:center}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.tracking-tight{letter-spacing:-0.025em}.tracking-wider{letter-spacing:0.05em}.text-amber-100{--tw-text-opacity:1;color:rgb(254 243 199 / var(--tw-text-opacity, 1))}.text-amber-200{--tw-text-opacity:1;color:rgb(253 230 138 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-brand-100{--tw-text-opacity:1;color:rgb(224 231 255 / var(--tw-text-opacity, 1))}.text-brand-500{--tw-text-opacity:1;color:rgb(99 102 241 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-rose-300{--tw-text-opacity:1;color:rgb(253 164 175 / var(--tw-text-opacity, 1))}.text-slate-100{--tw-text-opacity:1;color:rgb(241 245 249 / var(--tw-text-opacity, 1))}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.underline-offset-2{text-underline-offset:2px}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-brand-500\/20{--tw-shadow-color:rgb(99 102 241 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.shadow-brand-600\/20{--tw-shadow-color:rgb(79 70 229 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.shadow-emerald-600\/20{--tw-shadow-color:rgb(5 150 105 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.selection\:bg-brand-500 *::selection{--tw-bg-opacity:1;background-color:rgb(99 102 241 / var(--tw-bg-opacity, 1))}.selection\:text-white *::selection{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.selection\:bg-brand-500::selection{--tw-bg-opacity:1;background-color:rgb(99 102 241 / var(--tw-bg-opacity, 1))}.selection\:text-white::selection{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.hover\:border-brand-500:hover{--tw-border-opacity:1;border-color:rgb(99 102 241 / var(--tw-border-opacity, 1))}.hover\:bg-amber-500\/30:hover{background-color:rgb(245 158 11 / 0.3)}.hover\:bg-emerald-500:hover{--tw-bg-opacity:1;background-color:rgb(16 185 129 / var(--tw-bg-opacity, 1))}.hover\:bg-rose-500\/20:hover{background-color:rgb(244 63 94 / 0.2)}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-900\/80:hover{background-color:rgb(15 23 42 / 0.8)}.hover\:from-brand-500:hover{--tw-gradient-from:#6366f1 var(--tw-gradient-from-position);--tw-gradient-to:rgb(99 102 241 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.hover\:to-purple-500:hover{--tw-gradient-to:#a855f7 var(--tw-gradient-to-position)}.focus\:border-brand-500:focus{--tw-border-opacity:1;border-color:rgb(99 102 241 / var(--tw-border-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-brand-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(99 102 241 / var(--tw-ring-opacity, 1))}.active\:scale-\[0\.98\]:active{--tw-scale-x:0.98;--tw-scale-y:0.98;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[0\.99\]:active{--tw-scale-x:0.99;--tw-scale-y:0.99;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:bg-slate-700:active{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:from-slate-800:disabled{--tw-gradient-from:#1e293b var(--tw-gradient-from-position);--tw-gradient-to:rgb(30 41 59 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.disabled\:to-slate-800:disabled{--tw-gradient-to:#1e293b var(--tw-gradient-to-position)}.disabled\:text-slate-500:disabled{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.disabled\:shadow-none:disabled{--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.group:hover .group-hover\:border-brand-500\/40{border-color:rgb(99 102 241 / 0.4)}.group:hover .group-hover\:bg-brand-500\/20{background-color:rgb(99 102 241 / 0.2)}@media (min-width: 640px){.sm\:inline{display:inline}.sm\:hidden{display:none}.sm\:min-h-\[380px\]{min-height:380px}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-center{align-items:center}.sm\:gap-4{gap:1rem}.sm\:self-auto{align-self:auto}.sm\:p-4{padding:1rem}.sm\:p-6{padding:1.5rem}.sm\:p-8{padding:2rem}.sm\:px-0{padding-left:0px;padding-right:0px}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:py-8{padding-top:2rem;padding-bottom:2rem}.sm\:text-base{font-size:1rem;line-height:1.5rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-sm{font-size:0.875rem;line-height:1.25rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 768px){.md\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}}@media (min-width: 1024px){.lg\:flex-row{flex-direction:row}.lg\:items-center{align-items:center}}</style></head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/70 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7c4.5 1.8 11.5 1.8 16 0v10c-4.5-1.8-11.5-1.8-16 0V7z"></path>
+            <circle cx="9" cy="11" r="1.25" fill="currentColor" stroke="none"></circle>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l3.5-3 3 2.5 2.5-2 3 2.5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Panorama Studio
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 border border-brand-500/30">
+              Max 5 Photos
+            </span>
+          </h1>
+          <p class="text-xs text-slate-400">100% client-side feature matching &amp; homography stitching</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Vision Engine Status Pill -->
+        <div id="cvStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+          <span id="cvStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="cvStatusText">Stitch Engine Ready</span>
+        </div>
+
+        <!-- Download Standalone App Button -->
+        <button id="downloadAppBtn" type="button" title="Save this complete application as a standalone HTML file" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all shadow-sm active:scale-[0.98]">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          <span>Download App (.html)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- iOS Files / QuickLook Sandbox Notice (Automatically shown only when opened via file:// on iPhone/iPad) -->
+  <div id="iosFileProtocolBanner" class="hidden bg-amber-950/90 border-b border-amber-500/40 px-4 py-3 text-amber-100">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs sm:text-sm">
+      <div>
+        <strong class="font-semibold text-amber-300">Opened in iPhone Files QuickLook:</strong>
+        Apple's built-in file viewer blocks photo uploads from local <code class="px-1 py-0.5 rounded bg-amber-900/80">.html</code> files. Tap <strong>Open in Safari</strong> (bottom-right Safari icon) or open this link in Safari to add photos.
+      </div>
+      <button id="copyPageUrlBtn" type="button" class="self-start sm:self-auto shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-medium text-xs">
+        Copy Page Link
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast / Status Notification Banner (Replaces alert()) -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+    <!-- Step 1: Upload & Image Queue Card -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div>
+          <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+            Select &amp; Order Photos (2 to 5 Images)
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Upload overlapping photos from left to right (or in sequence). You can reorder or remove images before stitching.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 self-start sm:self-auto">
+          <span id="imageCountBadge" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">0 / 5 Photos</span>
+          <button id="clearAllBtn" type="button" class="hidden text-xs font-medium px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 transition">
+            Clear All
+          </button>
+        </div>
+      </div>
+      <!-- Drag & Drop Zone (Native <label> ensures reliable single-tap file picker on iOS Safari & mobile browsers) -->
+      <div class="space-y-3">
+        <label id="dropZone" for="fileInput" tabindex="0" class="group relative block select-none border-2 border-dashed border-slate-700 hover:border-brand-500 active:border-brand-400 bg-slate-950/60 hover:bg-slate-900/80 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all touch-manipulation">
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple="" class="sr-only">
+          <div class="pointer-events-none flex flex-col items-center justify-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-slate-800/90 group-hover:bg-brand-500/20 border border-slate-700 group-hover:border-brand-500/40 flex items-center justify-center transition">
+              <svg class="w-6 h-6 text-slate-300 group-hover:text-brand-400 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm sm:text-base font-medium text-slate-200">
+                <span class="sm:hidden">Tap here to choose photos (up to 5)</span>
+                <span class="hidden sm:inline">Drop up to 5 photos here, or <span class="text-brand-400 underline underline-offset-2">browse files</span></span>
+              </p>
+              <p class="text-xs text-slate-400 mt-1">
+                Supports JPG, PNG, WebP • Best results with 25%–40% overlap between adjacent frames
+              </p>
+            </div>
+          </div>
+        </label>
+
+        <!-- Explicit Mobile Fallback Button (Single-photo picker bypasses iOS WKWebView multi-select bugs) -->
+        <div class="flex sm:hidden items-center justify-center">
+          <label for="singleFileInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-slate-800 active:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer select-none touch-manipulation">
+            <input id="singleFileInput" type="file" accept="image/*" class="sr-only">
+            <svg class="w-4 h-4 text-brand-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span class="pointer-events-none">Add 1 Photo at a Time (iPhone Safe Mode)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Thumbnail Preview Grid -->
+      <div id="previewGrid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mt-5"></div>
+
+      <!-- Stitching Options & Primary Action Bar -->
+      <div class="mt-6 pt-5 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
+          <!-- Feature Detector Selector -->
+          <label class="flex items-center gap-2 text-slate-300">
+            <span class="text-slate-400 font-medium">Detector:</span>
+            <select id="detectorSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500">
+              <option value="ORB" selected="">ORB (Fast &amp; Reliable)</option>
+              <option value="AKAZE">AKAZE (High Detail)</option>
+            </select>
+          </label>
+
+          <!-- Working Resolution Selector -->
+          <label class="flex items-center gap-2 text-slate-300">
+            <span class="text-slate-400 font-medium">Resolution:</span>
+            <select id="resolutionSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500">
+              <option value="1000">Balanced (1000px)</option>
+              <option value="1400" selected="">High Quality (1400px)</option>
+              <option value="1800">Ultra (1800px)</option>
+            </select>
+          </label>
+
+          <!-- Auto-Crop Black Borders Checkbox -->
+          <label class="inline-flex items-center gap-2 cursor-pointer select-none text-slate-300" title="Crop to the largest solid rectangle with zero empty/transparent borders">
+            <input id="autoCropCheckbox" type="checkbox" checked="" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500">
+            <span>Crop to solid rectangle</span>
+          </label>
+
+          <!-- Auto-Order Photos Checkbox -->
+          <label class="inline-flex items-center gap-2 cursor-pointer select-none text-slate-300" title="Automatically detect which photos overlap even if uploaded out of left-to-right order">
+            <input id="autoOrderCheckbox" type="checkbox" checked="" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500">
+            <span>Auto-detect overlap order</span>
+          </label>
+        </div>
+
+        <button id="stitchBtn" type="button" disabled="" class="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed shadow-lg shadow-brand-600/20 disabled:shadow-none transition-all active:scale-[0.99]">
+          <svg id="stitchBtnIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          <span id="stitchBtnText">Add at least 2 photos</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Output Panorama Viewer & Export -->
+    <section id="resultSection" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div>
+          <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+            Stitched Panorama Output
+          </h2>
+          <p id="resultMeta" class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Upload 2 to 5 overlapping photos and click "Stitch Panorama" to generate your composite image.
+          </p>
+        </div>
+
+        <!-- Export Controls -->
+        <div id="exportControls" class="hidden flex flex-wrap items-center gap-2.5">
+          <select id="exportFormatSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+            <option value="image/jpeg">JPG (High Quality)</option>
+            <option value="image/png">PNG (Lossless)</option>
+          </select>
+
+          <button id="downloadPanoramaBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-[0.98]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            <span>Download Panorama</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas / Placeholder Stage -->
+      <div class="relative checkerboard rounded-2xl border border-slate-800 min-h-[280px] sm:min-h-[380px] flex items-center justify-center overflow-hidden p-3 sm:p-4">
+        <!-- Empty State -->
+        <div id="emptyResultPlaceholder" class="text-center max-w-md mx-auto py-8 px-4">
+          <div class="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center mx-auto mb-3 text-slate-400">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+              <rect x="3" y="5" width="18" height="14" rx="3"></rect>
+              <circle cx="8.5" cy="10.5" r="1.5"></circle>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 19"></path>
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-slate-300">No panorama generated yet</p>
+          <p class="text-xs text-slate-400 mt-1">
+            Your stitched result will appear here at full width with seamless feather blending and perspective alignment.
+          </p>
+        </div>
+
+        <!-- Processing Overlay -->
+        <div id="processingOverlay" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center">
+          <div class="w-12 h-12 rounded-full border-4 border-brand-500/30 border-t-brand-500 animate-spin-slow mb-4"></div>
+          <p id="processingTitle" class="text-base font-semibold text-white">Aligning &amp; Stitching Frames...</p>
+          <p id="processingSubtitle" class="text-xs text-slate-400 mt-1 max-w-sm">
+            Detecting keypoints, estimating RANSAC homographies, and blending seams locally in your browser.
+          </p>
+        </div>
+
+        <!-- Output Panorama Canvas -->
+        <canvas id="outputCanvas" class="hidden max-w-full max-h-[65vh] w-auto h-auto rounded-xl shadow-2xl"></canvas>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
+    All image processing runs 100% locally in your browser with zero external binary dependencies — your photos are never uploaded to any server.
+  </footer>
+
+  <!-- Standalone Client-Side Vision & Stitching Engine -->
+  <script>
+    const MAX_IMAGES = 5;
+    const MIN_IMAGES = 2;
+
+    const state = {
+      images: [],
+      cvReady: true,
+      isProcessing: false,
+      lastPanoramaReady: false
+    };
+
+    const el = {
+      dropZone: document.getElementById('dropZone'),
+      fileInput: document.getElementById('fileInput'),
+      singleFileInput: document.getElementById('singleFileInput'),
+      previewGrid: document.getElementById('previewGrid'),
+      imageCountBadge: document.getElementById('imageCountBadge'),
+      clearAllBtn: document.getElementById('clearAllBtn'),
+      detectorSelect: document.getElementById('detectorSelect'),
+      resolutionSelect: document.getElementById('resolutionSelect'),
+      autoCropCheckbox: document.getElementById('autoCropCheckbox'),
+      autoOrderCheckbox: document.getElementById('autoOrderCheckbox'),
+      stitchBtn: document.getElementById('stitchBtn'),
+      stitchBtnText: document.getElementById('stitchBtnText'),
+      resultMeta: document.getElementById('resultMeta'),
+      exportControls: document.getElementById('exportControls'),
+      exportFormatSelect: document.getElementById('exportFormatSelect'),
+      downloadPanoramaBtn: document.getElementById('downloadPanoramaBtn'),
+      downloadAppBtn: document.getElementById('downloadAppBtn'),
+      emptyResultPlaceholder: document.getElementById('emptyResultPlaceholder'),
+      processingOverlay: document.getElementById('processingOverlay'),
+      processingTitle: document.getElementById('processingTitle'),
+      processingSubtitle: document.getElementById('processingSubtitle'),
+      outputCanvas: document.getElementById('outputCanvas'),
+      toastContainer: document.getElementById('toastContainer')
+    };
+
+    /**
+     * Non-blocking toast notification banner (replaces alert())
+     */
+    function showToast(message, type = 'info') {
+      if (!el.toastContainer) return;
+      const styles = {
+        success: 'bg-emerald-950/95 border-emerald-500/50 text-emerald-100',
+        error: 'bg-rose-950/95 border-rose-500/50 text-rose-100',
+        info: 'bg-slate-900/95 border-slate-700 text-slate-100'
+      };
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 backdrop-blur-md ${styles[type] || styles.info}`;
+      toast.textContent = message;
+      el.toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4200);
+    }
+
+    /**
+     * Render thumbnail preview cards, reorder controls, and update button states
+     */
+    function updateUI() {
+      const count = state.images.length;
+      el.imageCountBadge.textContent = `${count} / ${MAX_IMAGES} Photos`;
+      el.clearAllBtn.classList.toggle('hidden', count === 0);
+      el.previewGrid.classList.toggle('hidden', count === 0);
+
+      el.previewGrid.innerHTML = state.images.map((item, idx) => `
+        <div class="group relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex flex-col shadow-md">
+          <div class="relative w-full h-28 sm:h-32 bg-slate-900 overflow-hidden">
+            <img src="${item.url}" alt="${item.name}" class="w-full h-full object-cover block" />
+            <span class="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-950/85 text-white border border-slate-700">
+              #${idx + 1}
+            </span>
+            <button
+              type="button"
+              data-action="remove"
+              data-index="${idx}"
+              title="Remove photo"
+              class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center shadow transition"
+            >
+              <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="p-2 flex items-center justify-between gap-1 bg-slate-900/90 border-t border-slate-800">
+            <span class="text-[11px] text-slate-400 truncate" title="${item.name}">
+              ${item.width}×${item.height}
+            </span>
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                data-action="left"
+                data-index="${idx}"
+                ${idx === 0 ? 'disabled' : ''}
+                title="Move earlier in sequence"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 transition"
+              >
+                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                data-action="right"
+                data-index="${idx}"
+                ${idx === count - 1 ? 'disabled' : ''}
+                title="Move later in sequence"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 transition"
+              >
+                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      const canStitch = state.cvReady && count >= MIN_IMAGES && !state.isProcessing;
+      el.stitchBtn.disabled = !canStitch;
+      if (state.isProcessing) {
+        el.stitchBtnText.textContent = 'Stitching...';
+      } else if (count < MIN_IMAGES) {
+        el.stitchBtnText.textContent = `Add at least ${MIN_IMAGES} photos`;
+      } else {
+        el.stitchBtnText.textContent = `Stitch ${count} Photos`;
+      }
+    }
+
+    /**
+     * Decode a File into an HTMLImageElement / drawable source safely across iOS Safari,
+     * Android Chrome, and local file:// contexts (where blob: URLs or 48MP photos can fail).
+     */
+    async function decodeImageFile(file) {
+      // Read via FileReader first so local file:// webviews (iOS Files app) never lose file access
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(`Failed to read ${file.name || 'photo'}`));
+        reader.readAsDataURL(file);
+      });
+
+      const rawImg = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Could not decode ${file.name || 'photo'}. If it is RAW/HEIC, try converting to JPG.`));
+        img.src = dataUrl;
+      });
+
+      // Downscale oversized 12MP–48MP phone camera photos immediately to prevent iOS memory resets
+      const origW = rawImg.naturalWidth || rawImg.width;
+      const origH = rawImg.naturalHeight || rawImg.height;
+      const maxDim = 2000;
+      const scale = Math.min(1, maxDim / Math.max(origW, origH));
+
+      if (scale < 1) {
+        const w = Math.max(1, Math.round(origW * scale));
+        const h = Math.max(1, Math.round(origH * scale));
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(rawImg, 0, 0, w, h);
+        const scaledUrl = c.toDataURL('image/jpeg', 0.9);
+        const scaledImg = await new Promise((resolve) => {
+          const sImg = new Image();
+          sImg.onload = () => resolve(sImg);
+          sImg.onerror = () => resolve(rawImg);
+          sImg.src = scaledUrl;
+        });
+        return {
+          url: scaledUrl,
+          imgElement: scaledImg,
+          width: scaledImg.naturalWidth || w,
+          height: scaledImg.naturalHeight || h
+        };
+      }
+
+      return {
+        url: dataUrl,
+        imgElement: rawImg,
+        width: origW,
+        height: origH
+      };
+    }
+
+    /**
+     * Load selected image files (up to 5 total)
+     */
+    async function handleFiles(fileList) {
+      const rawFiles = Array.from(fileList || []);
+      if (rawFiles.length === 0) return;
+
+      const files = rawFiles.filter(f =>
+        !f.type || f.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(f.name || '')
+      );
+      if (files.length === 0) {
+        showToast('Please select valid image files (JPG, PNG, WebP).', 'error');
+        return;
+      }
+
+      const remainingSlots = MAX_IMAGES - state.images.length;
+      if (remainingSlots <= 0) {
+        showToast(`Maximum ${MAX_IMAGES} photos reached. Remove a photo to add another.`, 'error');
+        return;
+      }
+
+      const filesToLoad = files.slice(0, remainingSlots);
+      if (files.length > remainingSlots) {
+        showToast(`Only added ${remainingSlots} photo(s) to stay within the 5-photo limit.`, 'info');
+      }
+
+      showToast(`Loading ${filesToLoad.length} photo(s)...`, 'info');
+
+      for (const file of filesToLoad) {
+        try {
+          const decoded = await decodeImageFile(file);
+          state.images.push({
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+            name: file.name || `Photo ${state.images.length + 1}`,
+            url: decoded.url,
+            imgElement: decoded.imgElement,
+            width: decoded.width,
+            height: decoded.height
+          });
+          updateUI();
+        } catch (err) {
+          showToast(err.message || `Failed to load ${file.name}`, 'error');
+        }
+      }
+
+      updateUI();
+    }
+
+    // Dropzone & File Input Listeners (Native <label for="fileInput"> handles taps directly on mobile)
+    el.dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        el.fileInput.click();
+      }
+    });
+    let isHandlingInput = false;
+    const onFileInputPicked = async (e) => {
+      if (isHandlingInput) return;
+      const inputEl = e.target;
+      const pickedFiles = inputEl && inputEl.files ? Array.from(inputEl.files) : [];
+      if (pickedFiles.length === 0) return;
+
+      isHandlingInput = true;
+      try {
+        await handleFiles(pickedFiles);
+      } finally {
+        // Only clear input.value on non-iOS browsers; resetting .value on iOS WebKit can invalidate pending File reads
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (!isIOS) {
+          try { inputEl.value = ''; } catch (_) {}
+        }
+        isHandlingInput = false;
+      }
+    };
+    el.fileInput.addEventListener('change', onFileInputPicked);
+    if (el.singleFileInput) {
+      el.singleFileInput.addEventListener('change', onFileInputPicked);
+    }
+
+    // Detect iOS local file:// QuickLook sandbox where Apple blocks <input type="file"> file reads
+    const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOSDevice && window.location.protocol === 'file:') {
+      const banner = document.getElementById('iosFileProtocolBanner');
+      if (banner) banner.classList.remove('hidden');
+    }
+    const copyPageUrlBtn = document.getElementById('copyPageUrlBtn');
+    if (copyPageUrlBtn) {
+      copyPageUrlBtn.addEventListener('click', () => {
+        const tempInput = document.createElement('input');
+        tempInput.value = window.location.href;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        tempInput.remove();
+        showToast('Link copied! Paste it into Safari or host on Netlify/GitHub Pages.', 'info');
+      });
+    }
+    el.dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.dropZone.classList.add('border-brand-500', 'bg-slate-900');
+    });
+    el.dropZone.addEventListener('dragleave', () => {
+      el.dropZone.classList.remove('border-brand-500', 'bg-slate-900');
+    });
+    el.dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.dropZone.classList.remove('border-brand-500', 'bg-slate-900');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    // Thumbnail Reorder & Remove Actions
+    el.previewGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const idx = Number(btn.dataset.index);
+
+      if (action === 'remove') {
+        const [removed] = state.images.splice(idx, 1);
+        if (removed && removed.url.startsWith('blob:')) URL.revokeObjectURL(removed.url);
+      } else if (action === 'left' && idx > 0) {
+        [state.images[idx - 1], state.images[idx]] = [state.images[idx], state.images[idx - 1]];
+      } else if (action === 'right' && idx < state.images.length - 1) {
+        [state.images[idx + 1], state.images[idx]] = [state.images[idx], state.images[idx + 1]];
+      }
+      updateUI();
+    });
+
+    el.clearAllBtn.addEventListener('click', () => {
+      state.images.forEach(item => {
+        if (item.url && item.url.startsWith('blob:')) URL.revokeObjectURL(item.url);
+      });
+      state.images = [];
+      updateUI();
+    });
+
+    // =========================================================================
+    // PURE-JS / CANVAS COMPUTER VISION & STITCHING PIPELINE (INSTANT STARTUP)
+    // =========================================================================
+
+    /**
+     * Draw an image onto an offscreen canvas scaled to maxDim and extract RGBA buffer
+     */
+    function imageToResizedFrame(imgElement, maxDim) {
+      const origW = imgElement.naturalWidth;
+      const origH = imgElement.naturalHeight;
+      const scale = Math.min(1, maxDim / Math.max(origW, origH));
+      const w = Math.max(1, Math.round(origW * scale));
+      const h = Math.max(1, Math.round(origH * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(imgElement, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+
+      return {
+        width: w,
+        height: h,
+        rgba: imageData.data
+      };
+    }
+
+    /**
+     * Convert RGBA to smoothed, locally contrast-normalized grayscale Uint8Array
+     */
+    function computeNormalizedGray(rgba, width, height) {
+      const n = width * height;
+      const raw = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const o = i * 4;
+        raw[i] = 0.299 * rgba[o] + 0.587 * rgba[o + 1] + 0.114 * rgba[o + 2];
+      }
+
+      // Fast 3x3 Gaussian blur to suppress sensor noise
+      const blur = new Float32Array(n);
+      for (let y = 0; y < height; y++) {
+        const ym = Math.max(0, y - 1) * width;
+        const y0 = y * width;
+        const yp = Math.min(height - 1, y + 1) * width;
+        for (let x = 0; x < width; x++) {
+          const xm = Math.max(0, x - 1);
+          const xp = Math.min(width - 1, x + 1);
+          blur[y0 + x] = (
+            raw[ym + xm] + 2 * raw[ym + x] + raw[ym + xp] +
+            2 * raw[y0 + xm] + 4 * raw[y0 + x] + 2 * raw[y0 + xp] +
+            raw[yp + xm] + 2 * raw[yp + x] + raw[yp + xp]
+          ) * 0.0625;
+        }
+      }
+
+      // Tile-based local contrast normalization (lightweight CLAHE)
+      const tilesX = 8;
+      const tilesY = 8;
+      const tileW = Math.ceil(width / tilesX);
+      const tileH = Math.ceil(height / tilesY);
+      const out = new Uint8Array(n);
+
+      for (let ty = 0; ty < tilesY; ty++) {
+        const yStart = ty * tileH;
+        const yEnd = Math.min(height, yStart + tileH);
+        for (let tx = 0; tx < tilesX; tx++) {
+          const xStart = tx * tileW;
+          const xEnd = Math.min(width, xStart + tileW);
+
+          let minV = 255, maxV = 0;
+          for (let y = yStart; y < yEnd; y++) {
+            const row = y * width;
+            for (let x = xStart; x < xEnd; x++) {
+              const v = blur[row + x];
+              if (v < minV) minV = v;
+              if (v > maxV) maxV = v;
+            }
+          }
+          const span = Math.max(24, maxV - minV);
+          const scale = 255 / span;
+          for (let y = yStart; y < yEnd; y++) {
+            const row = y * width;
+            for (let x = xStart; x < xEnd; x++) {
+              const v = (blur[row + x] - minV) * scale;
+              out[row + x] = v < 0 ? 0 : v > 255 ? 255 : v;
+            }
+          }
+        }
+      }
+
+      return out;
+    }
+
+    // Deterministic 256-bit BRIEF sampling pattern within radius 15
+    const BRIEF_PAIRS = (() => {
+      const pairs = new Int8Array(256 * 4);
+      let seed = 13374201;
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return (seed / 4294967296) * 2 - 1;
+      };
+      for (let i = 0; i < 256; i++) {
+        pairs[i * 4 + 0] = Math.round(rand() * 14);
+        pairs[i * 4 + 1] = Math.round(rand() * 14);
+        pairs[i * 4 + 2] = Math.round(rand() * 14);
+        pairs[i * 4 + 3] = Math.round(rand() * 14);
+      }
+      return pairs;
+    })();
+
+    /**
+     * Detect Shi-Tomasi / Harris corners with spatial grid bucketing and 256-bit BRIEF descriptors
+     */
+    function extractImageFeatures(frame, detectorType) {
+      const { width, height, rgba } = frame;
+      const gray = computeNormalizedGray(rgba, width, height);
+      const margin = 18;
+      const step = detectorType === 'AKAZE' ? 2 : 3;
+
+      // Compute Harris/Shi-Tomasi corner response
+      const response = new Float32Array(width * height);
+      for (let y = margin; y < height - margin; y += step) {
+        for (let x = margin; x < width - margin; x += step) {
+          let sxx = 0, syy = 0, sxy = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            const row = (y + dy) * width;
+            const rowUp = (y + dy - 1) * width;
+            const rowDn = (y + dy + 1) * width;
+            for (let dx = -1; dx <= 1; dx++) {
+              const cx = x + dx;
+              const ix = gray[row + cx + 1] - gray[row + cx - 1];
+              const iy = gray[rowDn + cx] - gray[rowUp + cx];
+              sxx += ix * ix;
+              syy += iy * iy;
+              sxy += ix * iy;
+            }
+          }
+          const det = sxx * syy - sxy * sxy;
+          const trace = sxx + syy;
+          const r = det - 0.04 * trace * trace;
+          if (r > 1200) {
+            response[y * width + x] = r;
+          }
+        }
+      }
+
+      // Spatial bucketing so keypoints cover walls, ceiling, and foreground evenly
+      const gridCols = 24;
+      const gridRows = 18;
+      const cellW = width / gridCols;
+      const cellH = height / gridRows;
+      const maxPerCell = detectorType === 'AKAZE' ? 6 : 5;
+      const buckets = Array.from({ length: gridCols * gridRows }, () => []);
+
+      for (let y = margin; y < height - margin; y += step) {
+        const gy = Math.min(gridRows - 1, Math.floor(y / cellH));
+        for (let x = margin; x < width - margin; x += step) {
+          const r = response[y * width + x];
+          if (r <= 0) continue;
+
+          // Non-maximum suppression in 5x5 neighborhood
+          let isMax = true;
+          for (let ny = -2; ny <= 2 && isMax; ny++) {
+            const rRow = (y + ny) * width;
+            for (let nx = -2; nx <= 2; nx++) {
+              if (nx === 0 && ny === 0) continue;
+              if (response[rRow + x + nx] > r) {
+                isMax = false;
+                break;
+              }
+            }
+          }
+          if (!isMax) continue;
+
+          const gx = Math.min(gridCols - 1, Math.floor(x / cellW));
+          const bucket = buckets[gy * gridCols + gx];
+          bucket.push({ x, y, r });
+        }
+      }
+
+      const keypoints = [];
+      for (const bucket of buckets) {
+        if (bucket.length === 0) continue;
+        bucket.sort((a, b) => b.r - a.r);
+        for (let k = 0; k < Math.min(maxPerCell, bucket.length); k++) {
+          keypoints.push(bucket[k]);
+        }
+      }
+
+      // Compute 256-bit (8 x Uint32) BRIEF descriptors for each keypoint
+      const descriptors = new Uint32Array(keypoints.length * 8);
+      for (let i = 0; i < keypoints.length; i++) {
+        const { x, y } = keypoints[i];
+        const descOffset = i * 8;
+        for (let w = 0; w < 8; w++) {
+          let word = 0;
+          const bitStart = w * 32;
+          for (let b = 0; b < 32; b++) {
+            const pIdx = (bitStart + b) * 4;
+            const x1 = x + BRIEF_PAIRS[pIdx + 0];
+            const y1 = y + BRIEF_PAIRS[pIdx + 1];
+            const x2 = x + BRIEF_PAIRS[pIdx + 2];
+            const y2 = y + BRIEF_PAIRS[pIdx + 3];
+            if (gray[y1 * width + x1] < gray[y2 * width + x2]) {
+              word |= (1 << b);
+            }
+          }
+          descriptors[descOffset + w] = word >>> 0;
+        }
+      }
+
+      return {
+        width,
+        height,
+        keypoints,
+        descriptors
+      };
+    }
+
+    /**
+     * Fast 32-bit Hamming population count
+     */
+    function popcount32(x) {
+      x = x - ((x >>> 1) & 0x55555555);
+      x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+      return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+    }
+
+    /**
+     * Solve 8x8 linear system via Gaussian elimination with partial pivoting
+     */
+    function solveLinear8(A, b) {
+      const n = 8;
+      const M = A.map((row, i) => [...row, b[i]]);
+      for (let col = 0; col < n; col++) {
+        let maxRow = col;
+        for (let row = col + 1; row < n; row++) {
+          if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
+        }
+        if (Math.abs(M[maxRow][col]) < 1e-10) return null;
+        [M[col], M[maxRow]] = [M[maxRow], M[col]];
+        const pivot = M[col][col];
+        for (let j = col; j <= n; j++) M[col][j] /= pivot;
+        for (let row = 0; row < n; row++) {
+          if (row === col) continue;
+          const factor = M[row][col];
+          for (let j = col; j <= n; j++) M[row][j] -= factor * M[col][j];
+        }
+      }
+      return M.map(row => row[n]);
+    }
+
+    /**
+     * Fit a 3x3 Homography from 4+ point correspondences using normalized DLT
+     */
+    function computeHomographyDLT(srcPts, dstPts) {
+      const count = srcPts.length;
+      if (count < 4) return null;
+
+      // Hartley coordinate normalization for numerical stability
+      let sx = 0, sy = 0, dx = 0, dy = 0;
+      for (let i = 0; i < count; i++) {
+        sx += srcPts[i].x; sy += srcPts[i].y;
+        dx += dstPts[i].x; dy += dstPts[i].y;
+      }
+      sx /= count; sy /= count; dx /= count; dy /= count;
+
+      let sDist = 0, dDist = 0;
+      for (let i = 0; i < count; i++) {
+        sDist += Math.hypot(srcPts[i].x - sx, srcPts[i].y - sy);
+        dDist += Math.hypot(dstPts[i].x - dx, dstPts[i].y - dy);
+      }
+      if (sDist < 1e-6 || dDist < 1e-6) return null;
+
+      const sScale = (Math.SQRT2 * count) / sDist;
+      const dScale = (Math.SQRT2 * count) / dDist;
+
+      // Build normal equations A^T A h = A^T b
+      const ATA = Array.from({ length: 8 }, () => new Float64Array(8));
+      const ATb = new Float64Array(8);
+
+      for (let i = 0; i < count; i++) {
+        const x = (srcPts[i].x - sx) * sScale;
+        const y = (srcPts[i].y - sy) * sScale;
+        const u = (dstPts[i].x - dx) * dScale;
+        const v = (dstPts[i].y - dy) * dScale;
+
+        const r1 = [x, y, 1, 0, 0, 0, -u * x, -u * y];
+        const r2 = [0, 0, 0, x, y, 1, -v * x, -v * y];
+
+        for (let r = 0; r < 8; r++) {
+          ATb[r] += r1[r] * u + r2[r] * v;
+          for (let c = 0; c < 8; c++) {
+            ATA[r][c] += r1[r] * r1[c] + r2[r] * r2[c];
+          }
+        }
+      }
+
+      const h = solveLinear8(ATA, ATb);
+      if (!h) return null;
+
+      const Hnorm = [
+        h[0], h[1], h[2],
+        h[3], h[4], h[5],
+        h[6], h[7], 1
+      ];
+
+      // Denormalize: T_dst^-1 * Hnorm * T_src
+      const Tsrc = [
+        sScale, 0, -sScale * sx,
+        0, sScale, -sScale * sy,
+        0, 0, 1
+      ];
+      const TdstInv = [
+        1 / dScale, 0, dx,
+        0, 1 / dScale, dy,
+        0, 0, 1
+      ];
+
+      const H = matMul3x3(TdstInv, matMul3x3(Hnorm, Tsrc));
+      if (Math.abs(H[8]) < 1e-8) return null;
+      for (let i = 0; i < 9; i++) H[i] /= H[8];
+      return H;
+    }
+
+    /**
+     * Fit a 2D Similarity Transform (uniform scale + rotation + translation) from 2+ points
+     */
+    function fitSimilarity2D(srcPts, dstPts) {
+      const n = srcPts.length;
+      if (n < 2) return null;
+      let sx = 0, sy = 0, dx = 0, dy = 0;
+      for (let i = 0; i < n; i++) {
+        sx += srcPts[i].x; sy += srcPts[i].y;
+        dx += dstPts[i].x; dy += dstPts[i].y;
+      }
+      sx /= n; sy /= n; dx /= n; dy /= n;
+
+      let numA = 0, numB = 0, denom = 0;
+      for (let i = 0; i < n; i++) {
+        const ux = srcPts[i].x - sx;
+        const uy = srcPts[i].y - sy;
+        const vx = dstPts[i].x - dx;
+        const vy = dstPts[i].y - dy;
+        numA += ux * vx + uy * vy;
+        numB += ux * vy - uy * vx;
+        denom += ux * ux + uy * uy;
+      }
+      if (denom < 1e-6) return null;
+      const a = numA / denom;
+      const b = numB / denom;
+      const tx = dx - (a * sx - b * sy);
+      const ty = dy - (b * sx + a * sy);
+      return [
+        a, -b, tx,
+        b,  a, ty,
+        0,  0, 1
+      ];
+    }
+
+    /**
+     * Match two precomputed feature sets via BRIEF Hamming distance + Lowe's ratio test
+     * and run RANSAC for Perspective Homography, Similarity, and Translation transforms.
+     */
+    function matchFeaturePair(srcFeat, dstFeat) {
+      const n1 = srcFeat.keypoints.length;
+      const n2 = dstFeat.keypoints.length;
+      if (n1 < 8 || n2 < 8) return null;
+
+      const d1 = srcFeat.descriptors;
+      const d2 = dstFeat.descriptors;
+      const goodSrc = [];
+      const goodDst = [];
+
+      for (let i = 0; i < n1; i++) {
+        const o1 = i * 8;
+        let bestDist = 257;
+        let secondDist = 257;
+        let bestJ = -1;
+
+        for (let j = 0; j < n2; j++) {
+          const o2 = j * 8;
+          const dist =
+            popcount32(d1[o1 + 0] ^ d2[o2 + 0]) +
+            popcount32(d1[o1 + 1] ^ d2[o2 + 1]) +
+            popcount32(d1[o1 + 2] ^ d2[o2 + 2]) +
+            popcount32(d1[o1 + 3] ^ d2[o2 + 3]) +
+            popcount32(d1[o1 + 4] ^ d2[o2 + 4]) +
+            popcount32(d1[o1 + 5] ^ d2[o2 + 5]) +
+            popcount32(d1[o1 + 6] ^ d2[o2 + 6]) +
+            popcount32(d1[o1 + 7] ^ d2[o2 + 7]);
+
+          if (dist < bestDist) {
+            secondDist = bestDist;
+            bestDist = dist;
+            bestJ = j;
+          } else if (dist < secondDist) {
+            secondDist = dist;
+          }
+        }
+
+        if (bestJ >= 0 && bestDist < 72 && bestDist < 0.80 * secondDist) {
+          goodSrc.push(srcFeat.keypoints[i]);
+          goodDst.push(dstFeat.keypoints[bestJ]);
+        }
+      }
+
+      const numGood = goodSrc.length;
+      if (numGood < 6) return null;
+
+      // 1. Median-filtered pure 2D translation fallback (always finite w = 1)
+      const dxs = goodSrc.map((p, i) => goodDst[i].x - p.x);
+      const dys = goodSrc.map((p, i) => goodDst[i].y - p.y);
+      const medDx = [...dxs].sort((a, b) => a - b)[Math.floor(numGood / 2)];
+      const medDy = [...dys].sort((a, b) => a - b)[Math.floor(numGood / 2)];
+
+      let transInliers = 0, sumDx = 0, sumDy = 0;
+      const transTol = Math.max(srcFeat.width, srcFeat.height) * 0.045;
+      for (let i = 0; i < numGood; i++) {
+        if (Math.hypot(dxs[i] - medDx, dys[i] - medDy) <= transTol) {
+          transInliers++;
+          sumDx += dxs[i];
+          sumDy += dys[i];
+        }
+      }
+      const translationH = [
+        1, 0, transInliers > 0 ? sumDx / transInliers : medDx,
+        0, 1, transInliers > 0 ? sumDy / transInliers : medDy,
+        0, 0, 1
+      ];
+
+      // 2. RANSAC 2D Similarity Transform (2-point samples)
+      let bestSimH = null;
+      let bestSimInliers = [];
+      const ransacThresh = Math.max(4.5, Math.max(srcFeat.width, srcFeat.height) * 0.005);
+
+      let rng = 987654321;
+      const nextIdx = (max) => {
+        rng = (rng * 1664525 + 1013904223) >>> 0;
+        return rng % max;
+      };
+
+      for (let iter = 0; iter < 300; iter++) {
+        const i1 = nextIdx(numGood);
+        const i2 = nextIdx(numGood);
+        if (i1 === i2) continue;
+        const cand = fitSimilarity2D([goodSrc[i1], goodSrc[i2]], [goodDst[i1], goodDst[i2]]);
+        if (!cand) continue;
+
+        const inliers = [];
+        for (let k = 0; k < numGood; k++) {
+          const p = projectPoint(cand, goodSrc[k].x, goodSrc[k].y);
+          if (Math.hypot(p.x - goodDst[k].x, p.y - goodDst[k].y) < ransacThresh) {
+            inliers.push(k);
+          }
+        }
+        if (inliers.length > bestSimInliers.length) {
+          bestSimInliers = inliers;
+          bestSimH = cand;
+        }
+      }
+
+      let affineH = null;
+      if (bestSimInliers.length >= 6) {
+        const refined = fitSimilarity2D(
+          bestSimInliers.map(k => goodSrc[k]),
+          bestSimInliers.map(k => goodDst[k])
+        );
+        if (refined && isReasonableTransform(refined, srcFeat.width, srcFeat.height)) {
+          affineH = refined;
+        }
+      }
+
+      // 3. RANSAC Full 3x3 Perspective Homography (4-point DLT samples)
+      let bestPerspH = null;
+      let bestPerspInliers = [];
+
+      if (numGood >= 10) {
+        for (let iter = 0; iter < 500; iter++) {
+          const idxs = new Set();
+          while (idxs.size < 4) idxs.add(nextIdx(numGood));
+          const arr = Array.from(idxs);
+          const cand = computeHomographyDLT(
+            arr.map(k => goodSrc[k]),
+            arr.map(k => goodDst[k])
+          );
+          if (!cand) continue;
+
+          const inliers = [];
+          for (let k = 0; k < numGood; k++) {
+            const p = projectPoint(cand, goodSrc[k].x, goodSrc[k].y);
+            if (Number.isFinite(p.x) && Math.hypot(p.x - goodDst[k].x, p.y - goodDst[k].y) < ransacThresh) {
+              inliers.push(k);
+            }
+          }
+          if (inliers.length > bestPerspInliers.length) {
+            bestPerspInliers = inliers;
+            bestPerspH = cand;
+          }
+        }
+      }
+
+      let perspectiveH = null;
+      if (bestPerspInliers.length >= 10) {
+        const refinedH = computeHomographyDLT(
+          bestPerspInliers.map(k => goodSrc[k]),
+          bestPerspInliers.map(k => goodDst[k])
+        );
+        if (refinedH && isReasonableTransform(refinedH, srcFeat.width, srcFeat.height)) {
+          perspectiveH = refinedH;
+        }
+      }
+
+      const inlierCount = Math.max(
+        transInliers,
+        bestSimInliers.length,
+        perspectiveH ? bestPerspInliers.length : 0
+      );
+      const safeH = affineH || (transInliers >= 4 ? translationH : null);
+      const chosenH = perspectiveH || safeH;
+      if (!chosenH || !safeH) return null;
+
+      return {
+        H: chosenH,
+        safeH,
+        transH: translationH,
+        inliers: inlierCount
+      };
+    }
+
+    /**
+     * Multiply two 3x3 matrices represented as 9-element row-major arrays
+     */
+    function matMul3x3(A, B) {
+      const C = new Array(9);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          C[r * 3 + c] =
+            A[r * 3 + 0] * B[0 * 3 + c] +
+            A[r * 3 + 1] * B[1 * 3 + c] +
+            A[r * 3 + 2] * B[2 * 3 + c];
+        }
+      }
+      return C;
+    }
+
+    /**
+     * Invert a 3x3 matrix represented as a 9-element row-major array
+     */
+    function invert3x3(m) {
+      const a = m[0], b = m[1], c = m[2];
+      const d = m[3], e = m[4], f = m[5];
+      const g = m[6], h = m[7], i = m[8];
+
+      const A = e * i - f * h;
+      const B = -(d * i - f * g);
+      const C = d * h - e * g;
+      const D = -(b * i - c * h);
+      const E = a * i - c * g;
+      const F = -(a * h - b * g);
+      const G = b * f - c * e;
+      const H = -(a * f - c * d);
+      const I = a * e - b * d;
+
+      const det = a * A + b * B + c * C;
+      if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
+      const invDet = 1.0 / det;
+      return [
+        A * invDet, D * invDet, G * invDet,
+        B * invDet, E * invDet, H * invDet,
+        C * invDet, F * invDet, I * invDet
+      ];
+    }
+
+    /**
+     * Project a 2D point (x, y) by a 3x3 homography array H
+     */
+    function projectPoint(H, x, y) {
+      const w = H[6] * x + H[7] * y + H[8];
+      if (!Number.isFinite(w) || w <= 1e-4) {
+        return { x: NaN, y: NaN, w };
+      }
+      return {
+        x: (H[0] * x + H[1] * y + H[2]) / w,
+        y: (H[3] * x + H[4] * y + H[5]) / w,
+        w
+      };
+    }
+
+    /**
+     * Validate that a 3x3 transform maps image corners cleanly without perspective flips or collapse
+     */
+    function isReasonableTransform(H, width, height) {
+      if (!H || H.length !== 9 || !H.every(Number.isFinite)) return false;
+
+      const pts = [
+        projectPoint(H, 0, 0),
+        projectPoint(H, width, 0),
+        projectPoint(H, width, height),
+        projectPoint(H, 0, height)
+      ];
+
+      if (pts.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.w <= 0.25)) {
+        return false;
+      }
+
+      const maxSpan = Math.max(width, height) * 5;
+      for (const p of pts) {
+        if (Math.abs(p.x) > maxSpan || Math.abs(p.y) > maxSpan) return false;
+      }
+
+      // Check strict convexity of projected quad
+      let sign = 0;
+      for (let i = 0; i < 4; i++) {
+        const p0 = pts[i];
+        const p1 = pts[(i + 1) % 4];
+        const p2 = pts[(i + 2) % 4];
+        const cross = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
+        if (Math.abs(cross) < 1e-3) return false;
+        const s = cross > 0 ? 1 : -1;
+        if (sign === 0) sign = s;
+        else if (sign !== s) return false;
+      }
+
+      const area = 0.5 * Math.abs(
+        (pts[0].x * pts[1].y - pts[1].x * pts[0].y) +
+        (pts[1].x * pts[2].y - pts[2].x * pts[1].y) +
+        (pts[2].x * pts[3].y - pts[3].x * pts[2].y) +
+        (pts[3].x * pts[0].y - pts[0].x * pts[3].y)
+      );
+      const origArea = width * height;
+      return area > origArea * 0.2 && area < origArea * 4.5;
+    }
+
+    /**
+     * Build global transforms for all N images either sequentially or via maximum-inlier
+     * spanning tree, cascading through Perspective -> Similarity -> Translation.
+     */
+    function solveGlobalTransforms(features, autoOrder) {
+      const n = features.length;
+
+      function pickStepMatrix(match, mode) {
+        if (mode === 0) return match.H;
+        if (mode === 1) return match.safeH;
+        return match.transH;
+      }
+
+      function buildWithMode(mode) {
+        const globalH = new Array(n).fill(null);
+
+        if (!autoOrder) {
+          const anchorIdx = Math.floor(n / 2);
+          globalH[anchorIdx] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
+          for (let i = anchorIdx + 1; i < n; i++) {
+            const match = matchFeaturePair(features[i], features[i - 1]);
+            if (!match) {
+              throw new Error(
+                `Could not align Photo #${i + 1} with Photo #${i}. Try enabling "Auto-detect overlap order" or verify they overlap.`
+              );
+            }
+            globalH[i] = matMul3x3(globalH[i - 1], pickStepMatrix(match, mode));
+          }
+
+          for (let i = anchorIdx - 1; i >= 0; i--) {
+            const match = matchFeaturePair(features[i], features[i + 1]);
+            if (!match) {
+              throw new Error(
+                `Could not align Photo #${i + 1} with Photo #${i + 2}. Try enabling "Auto-detect overlap order" or verify they overlap.`
+              );
+            }
+            globalH[i] = matMul3x3(globalH[i + 1], pickStepMatrix(match, mode));
+          }
+          return globalH;
+        }
+
+        const edges = [];
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            const forward = matchFeaturePair(features[j], features[i]);
+            if (forward) {
+              const stepH = pickStepMatrix(forward, mode);
+              const backwardH = invert3x3(stepH);
+              if (backwardH) {
+                edges.push({
+                  u: i,
+                  v: j,
+                  inliers: forward.inliers,
+                  H_v_to_u: stepH,
+                  H_u_to_v: backwardH
+                });
+              }
+            }
+          }
+        }
+
+        if (edges.length === 0) {
+          throw new Error(
+            'No overlapping features found between any of the uploaded photos. Ensure the images share 25–40% of the same scene.'
+          );
+        }
+
+        edges.sort((a, b) => b.inliers - a.inliers);
+
+        const nodeStrength = new Array(n).fill(0);
+        edges.forEach(e => {
+          nodeStrength[e.u] += e.inliers;
+          nodeStrength[e.v] += e.inliers;
+        });
+        let anchorIdx = 0;
+        for (let i = 1; i < n; i++) {
+          if (nodeStrength[i] > nodeStrength[anchorIdx]) anchorIdx = i;
+        }
+
+        const visited = new Set([anchorIdx]);
+        globalH[anchorIdx] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
+        while (visited.size < n) {
+          let bestEdge = null;
+          for (const edge of edges) {
+            const uIn = visited.has(edge.u);
+            const vIn = visited.has(edge.v);
+            if (uIn !== vIn) {
+              bestEdge = edge;
+              break;
+            }
+          }
+
+          if (!bestEdge) {
+            const unlinked = [];
+            for (let i = 0; i < n; i++) {
+              if (!visited.has(i)) unlinked.push(`#${i + 1}`);
+            }
+            throw new Error(
+              `Photo ${unlinked.join(', ')} did not share enough overlap with the rest of the panorama.`
+            );
+          }
+
+          if (visited.has(bestEdge.u)) {
+            globalH[bestEdge.v] = matMul3x3(globalH[bestEdge.u], bestEdge.H_v_to_u);
+            visited.add(bestEdge.v);
+          } else {
+            globalH[bestEdge.u] = matMul3x3(globalH[bestEdge.v], bestEdge.H_u_to_v);
+            visited.add(bestEdge.u);
+          }
+        }
+
+        return globalH;
+      }
+
+      for (let mode = 0; mode <= 2; mode++) {
+        const candidateGlobal = buildWithMode(mode);
+        const allValid = candidateGlobal.every((H, idx) =>
+          H && isReasonableTransform(H, features[idx].width, features[idx].height)
+        );
+        if (allValid) {
+          return candidateGlobal;
+        }
+      }
+
+      return buildWithMode(2);
+    }
+
+    /**
+     * Find the largest axis-aligned rectangle completely inside the valid (alpha > 0) mask
+     * using the classic histogram largest-rectangle algorithm so exported panoramas have zero
+     * jagged checkerboard borders.
+     */
+    function findLargestInteriorRectangle(accW, outW, outH) {
+      const heights = new Int32Array(outW);
+      const stack = new Int32Array(outW + 1);
+      let bestArea = 0;
+      let bestRect = { x: 0, y: 0, w: outW, h: outH };
+
+      for (let y = 0; y < outH; y++) {
+        const row = y * outW;
+        for (let x = 0; x < outW; x++) {
+          heights[x] = accW[row + x] > 0 ? heights[x] + 1 : 0;
+        }
+
+        let top = -1;
+        for (let i = 0; i <= outW; i++) {
+          const currH = i === outW ? 0 : heights[i];
+          while (top >= 0 && currH < heights[stack[top]]) {
+            const h = heights[stack[top--]];
+            const left = top < 0 ? 0 : stack[top] + 1;
+            const w = i - left;
+            const area = w * h;
+            if (area > bestArea) {
+              bestArea = area;
+              bestRect = {
+                x: left,
+                y: y - h + 1,
+                w,
+                h
+              };
+            }
+          }
+          stack[++top] = i;
+        }
+      }
+
+      return bestArea > 0 ? bestRect : null;
+    }
+
+    /**
+     * Inverse-warp, exposure-match, and bilinearly feather-blend RGBA frames onto the panorama canvas
+     */
+    function blendWarpedFrames(frames, globalHomographies, autoCrop) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+      frames.forEach((frame, i) => {
+        const H = globalHomographies[i];
+        const corners = [
+          projectPoint(H, 0, 0),
+          projectPoint(H, frame.width, 0),
+          projectPoint(H, frame.width, frame.height),
+          projectPoint(H, 0, frame.height)
+        ];
+        corners.forEach(pt => {
+          if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) {
+            throw new Error('Alignment projection diverged. Try reordering photos or toggling Auto-detect overlap order.');
+          }
+          if (pt.x < minX) minX = pt.x;
+          if (pt.y < minY) minY = pt.y;
+          if (pt.x > maxX) maxX = pt.x;
+          if (pt.y > maxY) maxY = pt.y;
+        });
+      });
+
+      let outW = Math.round(maxX - minX);
+      let outH = Math.round(maxY - minY);
+
+      if (!Number.isFinite(outW) || !Number.isFinite(outH) || outW <= 0 || outH <= 0) {
+        throw new Error('Could not compute valid panorama bounds. Ensure uploaded photos overlap.');
+      }
+
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const MAX_CANVAS_DIM = isMobile ? 3600 : 6000;
+      let postScale = 1.0;
+      if (outW > MAX_CANVAS_DIM || outH > MAX_CANVAS_DIM) {
+        postScale = MAX_CANVAS_DIM / Math.max(outW, outH);
+        outW = Math.round(outW * postScale);
+        outH = Math.round(outH * postScale);
+      }
+
+      const T = [
+        postScale, 0, -minX * postScale,
+        0, postScale, -minY * postScale,
+        0, 0, 1
+      ];
+
+      const totalPixels = outW * outH;
+      const accR = new Float32Array(totalPixels);
+      const accG = new Float32Array(totalPixels);
+      const accB = new Float32Array(totalPixels);
+      const accW = new Float32Array(totalPixels);
+
+      frames.forEach((frame, idx) => {
+        const finalH = matMul3x3(T, globalHomographies[idx]);
+        const invH = invert3x3(finalH);
+        if (!invH) return;
+
+        const w = frame.width;
+        const h = frame.height;
+        const src = frame.rgba;
+
+        // Compute tight destination bounding box for this frame to skip empty regions
+        const corners = [
+          projectPoint(finalH, 0, 0),
+          projectPoint(finalH, w, 0),
+          projectPoint(finalH, w, h),
+          projectPoint(finalH, 0, h)
+        ];
+        const bx0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c.x))));
+        const by0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c.y))));
+        const bx1 = Math.min(outW - 1, Math.ceil(Math.max(...corners.map(c => c.x))));
+        const by1 = Math.min(outH - 1, Math.ceil(Math.max(...corners.map(c => c.y))));
+
+        const h0 = invH[0], h1 = invH[1], h2 = invH[2];
+        const h3 = invH[3], h4 = invH[4], h5 = invH[5];
+        const h6 = invH[6], h7 = invH[7], h8 = invH[8];
+
+        const halfW = w * 0.5;
+        const halfH = h * 0.5;
+
+        // First pass on overlap region to estimate exposure/white-balance gain relative to existing canvas
+        let ovSumSrcR = 0, ovSumSrcG = 0, ovSumSrcB = 0;
+        let ovSumDstR = 0, ovSumDstG = 0, ovSumDstB = 0;
+        let ovSamples = 0;
+
+        if (idx > 0) {
+          for (let dy = by0; dy <= by1; dy += 3) {
+            let numX = h1 * dy + h2 + h0 * bx0;
+            let numY = h4 * dy + h5 + h3 * bx0;
+            let denW = h7 * dy + h8 + h6 * bx0;
+            const rowOut = dy * outW;
+
+            for (let dx = bx0; dx <= bx1; dx += 3) {
+              const p = rowOut + dx;
+              const existingW = accW[p];
+              if (existingW > 0 && denW > 1e-5) {
+                const sx = numX / denW;
+                const sy = numY / denW;
+                if (sx >= 1 && sx < w - 2 && sy >= 1 && sy < h - 2) {
+                  const i00 = ((sy | 0) * w + (sx | 0)) * 4;
+                  const sr = src[i00], sg = src[i00 + 1], sb = src[i00 + 2];
+                  const dr = accR[p] / existingW, dg = accG[p] / existingW, db = accB[p] / existingW;
+                  // Ignore clipped highlights (sun glare) and deep shadows for stable gain
+                  if (sr > 20 && sr < 240 && dr > 20 && dr < 240) {
+                    ovSumSrcR += sr; ovSumSrcG += sg; ovSumSrcB += sb;
+                    ovSumDstR += dr; ovSumDstG += dg; ovSumDstB += db;
+                    ovSamples++;
+                  }
+                }
+              }
+              numX += h0 * 3;
+              numY += h3 * 3;
+              denW += h6 * 3;
+            }
+          }
+        }
+
+        const clampGain = (g) => Math.max(0.82, Math.min(1.22, g));
+        const gainR = ovSamples > 40 ? clampGain(ovSumDstR / Math.max(1, ovSumSrcR)) : 1.0;
+        const gainG = ovSamples > 40 ? clampGain(ovSumDstG / Math.max(1, ovSumSrcG)) : 1.0;
+        const gainB = ovSamples > 40 ? clampGain(ovSumDstB / Math.max(1, ovSumSrcB)) : 1.0;
+
+        for (let dy = by0; dy <= by1; dy++) {
+          let numX = h1 * dy + h2 + h0 * bx0;
+          let numY = h4 * dy + h5 + h3 * bx0;
+          let denW = h7 * dy + h8 + h6 * bx0;
+          const rowOut = dy * outW;
+
+          for (let dx = bx0; dx <= bx1; dx++) {
+            if (denW > 1e-5) {
+              const sx = numX / denW;
+              const sy = numY / denW;
+
+              if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
+                const x0 = sx | 0;
+                const y0 = sy | 0;
+                const fx = sx - x0;
+                const fy = sy - y0;
+                const fx1 = 1 - fx;
+                const fy1 = 1 - fy;
+
+                const w00 = fx1 * fy1;
+                const w10 = fx * fy1;
+                const w01 = fx1 * fy;
+                const w11 = fx * fy;
+
+                const i00 = (y0 * w + x0) * 4;
+                const i10 = i00 + 4;
+                const i01 = i00 + w * 4;
+                const i11 = i01 + 4;
+
+                const r = Math.min(255, (src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11) * gainR);
+                const g = Math.min(255, (src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11) * gainG);
+                const b = Math.min(255, (src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11) * gainB);
+
+                // Smooth quadratic edge feather weight so overlapping seams blend seamlessly
+                const wx = Math.min(sx + 1, w - sx) / halfW;
+                const wy = Math.min(sy + 1, h - sy) / halfH;
+                const e = Math.min(1, wx) * Math.min(1, wy);
+                const weight = Math.max(0.0005, e * e);
+
+                const p = rowOut + dx;
+                accR[p] += r * weight;
+                accG[p] += g * weight;
+                accB[p] += b * weight;
+                accW[p] += weight;
+              }
+            }
+            numX += h0;
+            numY += h3;
+            denW += h6;
+          }
+        }
+      });
+
+      const outRGBA = new Uint8ClampedArray(totalPixels * 4);
+      for (let p = 0; p < totalPixels; p++) {
+        const w = accW[p];
+        if (w > 0) {
+          outRGBA[p * 4 + 0] = Math.round(accR[p] / w);
+          outRGBA[p * 4 + 1] = Math.round(accG[p] / w);
+          outRGBA[p * 4 + 2] = Math.round(accB[p] / w);
+          outRGBA[p * 4 + 3] = 255;
+        } else {
+          outRGBA[p * 4 + 3] = 0;
+        }
+      }
+
+      let cropX = 0, cropY = 0, cropW = outW, cropH = outH;
+      if (autoCrop) {
+        const innerRect = findLargestInteriorRectangle(accW, outW, outH);
+        if (innerRect && innerRect.w > 20 && innerRect.h > 20) {
+          cropX = innerRect.x;
+          cropY = innerRect.y;
+          cropW = innerRect.w;
+          cropH = innerRect.h;
+        }
+      }
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = outW;
+      tempCanvas.height = outH;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.putImageData(new ImageData(outRGBA, outW, outH), 0, 0);
+
+      el.outputCanvas.width = cropW;
+      el.outputCanvas.height = cropH;
+      const outCtx = el.outputCanvas.getContext('2d');
+      outCtx.clearRect(0, 0, cropW, cropH);
+      outCtx.drawImage(tempCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      return { width: cropW, height: cropH };
+    }
+
+    /**
+     * Main Stitch Execution Handler
+     */
+    el.stitchBtn.addEventListener('click', async () => {
+      if (!state.cvReady || state.images.length < MIN_IMAGES || state.isProcessing) return;
+
+      state.isProcessing = true;
+      updateUI();
+      el.processingOverlay.classList.remove('hidden');
+      el.processingTitle.textContent = 'Preparing & Scaling Images...';
+
+      await new Promise(r => setTimeout(r, 40));
+
+      const frames = [];
+      const features = [];
+      try {
+        const maxDim = Number(el.resolutionSelect.value) || 1400;
+        const detectorType = el.detectorSelect.value || 'ORB';
+        const autoCrop = el.autoCropCheckbox.checked;
+        const autoOrder = el.autoOrderCheckbox.checked;
+
+        for (let i = 0; i < state.images.length; i++) {
+          el.processingTitle.textContent = `Extracting Features (${i + 1}/${state.images.length})...`;
+          await new Promise(r => setTimeout(r, 15));
+          const frame = imageToResizedFrame(state.images[i].imgElement, maxDim);
+          frames.push(frame);
+          features.push(extractImageFeatures(frame, detectorType));
+        }
+
+        const n = frames.length;
+        el.processingTitle.textContent = autoOrder
+          ? 'Finding Best Overlap Graph & Aligning Frames...'
+          : 'Aligning Frames in Sequence...';
+        await new Promise(r => setTimeout(r, 20));
+
+        const globalH = solveGlobalTransforms(features, autoOrder);
+
+        el.processingTitle.textContent = 'Warping & Feather-Blending Panorama...';
+        await new Promise(r => setTimeout(r, 20));
+
+        const startTime = performance.now();
+        const finalSize = blendWarpedFrames(frames, globalH, autoCrop);
+        const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(2);
+
+        state.lastPanoramaReady = true;
+        el.emptyResultPlaceholder.classList.add('hidden');
+        el.outputCanvas.classList.remove('hidden');
+        el.exportControls.classList.remove('hidden');
+        el.resultMeta.textContent = `Stitched ${n} photos into ${finalSize.width} × ${finalSize.height} px panorama (${elapsedSec}s blend).`;
+
+        showToast('Panorama stitched successfully!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Stitching failed. Try reordering photos or using overlapping frames.', 'error');
+      } finally {
+        state.isProcessing = false;
+        el.processingOverlay.classList.add('hidden');
+        updateUI();
+      }
+    });
+
+    /**
+     * 1-Click Download Stitched Panorama (JPG / PNG)
+     */
+    el.downloadPanoramaBtn.addEventListener('click', () => {
+      if (!state.lastPanoramaReady) return;
+      const mime = el.exportFormatSelect.value;
+      const ext = mime === 'image/png' ? 'png' : 'jpg';
+      const quality = mime === 'image/jpeg' ? 0.94 : undefined;
+
+      el.outputCanvas.toBlob((blob) => {
+        if (!blob) {
+          showToast('Unable to export panorama image.', 'error');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `panorama-${Date.now()}.${ext}`;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        showToast(`Downloaded panorama.${ext}`, 'success');
+      }, mime, quality);
+    });
+
+    /**
+     * Download Standalone App (.html) so the user can save and run it locally
+     */
+    el.downloadAppBtn.addEventListener('click', () => {
+      const docClone = document.documentElement.cloneNode(true);
+      const clonedGrid = docClone.querySelector('#previewGrid');
+      if (clonedGrid) clonedGrid.innerHTML = '';
+      const clonedToasts = docClone.querySelector('#toastContainer');
+      if (clonedToasts) clonedToasts.innerHTML = '';
+      const clonedCanvas = docClone.querySelector('#outputCanvas');
+      if (clonedCanvas) clonedCanvas.classList.add('hidden');
+      const clonedEmpty = docClone.querySelector('#emptyResultPlaceholder');
+      if (clonedEmpty) clonedEmpty.classList.remove('hidden');
+      const clonedExport = docClone.querySelector('#exportControls');
+      if (clonedExport) clonedExport.classList.add('hidden');
+
+      const htmlContent = '<!DOCTYPE html>\n' + docClone.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'panorama-stitcher.html';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('Saved standalone app as panorama-stitcher.html', 'success');
+    });
+
+    // Initialize initial UI state immediately
+    updateUI();
+  </script>
+
+</body></html>
