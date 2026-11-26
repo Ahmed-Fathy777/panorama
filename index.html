@@ -3,2029 +3,1171 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Panorama Studio" />
   <title>Panorama Studio — Client-Side Image Stitcher</title>
   <style>
-    /* Self-contained layout & utility styling so the app works 100% offline without external CDNs */
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-alt: #0b1120;
+      --border: #334155;
+      --border-hover: #64748b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --primary-text: #0f172a;
+      --accent: #818cf8;
+      --danger: #f43f5e;
+      --danger-bg: rgba(244, 63, 94, 0.14);
+      --success: #34d399;
+      --radius: 14px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
-      background-color: #020617;
-      color: #f1f5f9;
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px 16px 48px;
       display: flex;
       flex-direction: column;
-      -webkit-tap-highlight-color: transparent;
-    }
-    ::selection { background-color: #6366f1; color: #ffffff; }
-    .hidden { display: none !important; }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-    }
-    .pointer-events-none { pointer-events: none; }
-    .pointer-events-auto { pointer-events: auto; }
-    .select-none { user-select: none; -webkit-user-select: none; }
-    .touch-manipulation { touch-action: manipulation; }
-    .cursor-pointer { cursor: pointer; }
-    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .shrink-0 { flex-shrink: 0; }
-    .self-start { align-self: flex-start; }
-
-    /* Layout & spacing */
-    .flex-1 { flex: 1 1 0%; }
-    .flex { display: flex; }
-    .inline-flex { display: inline-flex; }
-    .grid { display: grid; }
-    .block { display: block; }
-    .relative { position: relative; }
-    .fixed { position: fixed; }
-    .sticky { position: sticky; }
-    .absolute { position: absolute; }
-    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-    .top-0 { top: 0; }
-    .top-2 { top: 0.5rem; }
-    .left-2 { left: 0.5rem; }
-    .right-2 { right: 0.5rem; }
-    .bottom-5 { bottom: 1.25rem; }
-    .right-5 { right: 1.25rem; }
-    .z-20 { z-index: 20; }
-    .z-30 { z-index: 30; }
-    .z-50 { z-index: 50; }
-    .overflow-hidden { overflow: hidden; }
-    .flex-col { flex-direction: column; }
-    .flex-wrap { flex-wrap: wrap; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .justify-between { justify-content: space-between; }
-    .gap-1 { gap: 0.25rem; }
-    .gap-2 { gap: 0.5rem; }
-    .gap-2\.5 { gap: 0.625rem; }
-    .gap-3 { gap: 0.75rem; }
-    .gap-4 { gap: 1rem; }
-    .space-y-3 > * + * { margin-top: 0.75rem; }
-    .space-y-6 > * + * { margin-top: 1.5rem; }
-
-    .w-full { width: 100%; }
-    .w-auto { width: auto; }
-    .h-auto { height: auto; }
-    .max-w-full { max-width: 100%; }
-    .max-w-sm { max-width: 24rem; }
-    .max-w-md { max-width: 28rem; }
-    .max-w-6xl { max-width: 72rem; }
-    .max-h-\[65vh\] { max-height: 65vh; }
-    .min-h-screen { min-height: 100vh; }
-    .min-h-\[280px\] { min-height: 280px; }
-    .mx-auto { margin-left: auto; margin-right: auto; }
-    .mt-0\.5 { margin-top: 0.125rem; }
-    .mt-1 { margin-top: 0.25rem; }
-    .mt-5 { margin-top: 1.25rem; }
-    .mt-6 { margin-top: 1.5rem; }
-    .mb-3 { margin-bottom: 0.75rem; }
-    .mb-4 { margin-bottom: 1rem; }
-    .mb-5 { margin-bottom: 1.25rem; }
-    .pt-5 { padding-top: 1.25rem; }
-    .p-1\.5 { padding: 0.375rem; }
-    .p-2 { padding: 0.5rem; }
-    .p-3 { padding: 0.75rem; }
-    .p-5 { padding: 1.25rem; }
-    .p-6 { padding: 1.5rem; }
-    .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
-    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
-    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-    .px-3\.5 { padding-left: 0.875rem; padding-right: 0.875rem; }
-    .px-4 { padding-left: 1rem; padding-right: 1rem; }
-    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-    .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
-    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
-    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-    .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-    .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
-
-    .w-2 { width: 0.5rem; } .h-2 { height: 0.5rem; }
-    .w-3\.5 { width: 0.875rem; } .h-3\.5 { height: 0.875rem; }
-    .w-4 { width: 1rem; } .h-4 { height: 1rem; }
-    .w-5 { width: 1.25rem; } .h-5 { height: 1.25rem; }
-    .w-6 { width: 1.5rem; } .h-6 { height: 1.5rem; }
-    .w-7 { width: 1.75rem; } .h-7 { height: 1.75rem; }
-    .w-8 { width: 2rem; } .h-8 { height: 2rem; }
-    .w-10 { width: 2.5rem; } .h-10 { height: 2.5rem; }
-    .w-12 { width: 3rem; } .h-12 { height: 3rem; }
-    .w-14 { width: 3.5rem; } .h-14 { height: 3.5rem; }
-    .h-28 { height: 7rem; }
-
-    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-    /* Typography */
-    .text-center { text-align: center; }
-    .text-\[11px\] { font-size: 11px; line-height: 1rem; }
-    .text-xs { font-size: 0.75rem; line-height: 1rem; }
-    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    .text-base { font-size: 1rem; line-height: 1.5rem; }
-    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-    .font-medium { font-weight: 500; }
-    .font-semibold { font-weight: 600; }
-    .font-bold { font-weight: 700; }
-    .uppercase { text-transform: uppercase; }
-    .tracking-tight { letter-spacing: -0.025em; }
-    .tracking-wider { letter-spacing: 0.05em; }
-    .underline { text-decoration: underline; }
-    .underline-offset-2 { text-underline-offset: 2px; }
-
-    /* Colors, borders, shadows & effects */
-    .rounded-lg { border-radius: 0.5rem; }
-    .rounded-xl { border-radius: 0.75rem; }
-    .rounded-2xl { border-radius: 1rem; }
-    .rounded-full { border-radius: 9999px; }
-    .rounded { border-radius: 0.25rem; }
-    .border { border-width: 1px; border-style: solid; }
-    .border-2 { border-width: 2px; }
-    .border-4 { border-width: 4px; }
-    .border-dashed { border-style: dashed; }
-    .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
-    .border-t { border-top-width: 1px; border-top-style: solid; }
-
-    .bg-slate-800 { background-color: #1e293b; }
-    .bg-slate-800\/80 { background-color: rgba(30, 41, 59, 0.8); }
-    .bg-slate-800\/90 { background-color: rgba(30, 41, 59, 0.9); }
-    .bg-slate-900 { background-color: #0f172a; }
-    .bg-slate-900\/70 { background-color: rgba(15, 23, 42, 0.7); }
-    .bg-slate-900\/80 { background-color: rgba(15, 23, 42, 0.8); }
-    .bg-slate-900\/90 { background-color: rgba(15, 23, 42, 0.9); }
-    .bg-slate-950 { background-color: #020617; }
-    .bg-slate-950\/60 { background-color: rgba(2, 6, 23, 0.6); }
-    .bg-slate-950\/85 { background-color: rgba(2, 6, 23, 0.85); }
-    .bg-amber-900\/80 { background-color: rgba(120, 53, 15, 0.8); }
-    .bg-amber-950\/90 { background-color: rgba(69, 26, 3, 0.9); }
-    .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.2); }
-    .bg-emerald-400 { background-color: #34d399; }
-    .bg-emerald-600 { background-color: #059669; }
-    .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.1); }
-    .bg-rose-600\/90 { background-color: rgba(225, 29, 72, 0.9); }
-    .bg-rose-500\/10 { background-color: rgba(244, 63, 94, 0.1); }
-    .bg-brand-600 { background-color: #4f46e5; }
-    .bg-brand-500\/20 { background-color: rgba(99, 102, 241, 0.2); }
-    .bg-brand-500\/30 { border-color: rgba(99, 102, 241, 0.3); }
-    .bg-gradient-to-br { background-image: linear-gradient(to bottom right, #6366f1, #9333ea); }
-    .bg-gradient-to-r { background-image: linear-gradient(to right, #4f46e5, #9333ea); }
-
-    .text-white { color: #ffffff; }
-    .text-slate-100 { color: #f1f5f9; }
-    .text-slate-200 { color: #e2e8f0; }
-    .text-slate-300 { color: #cbd5e1; }
-    .text-slate-400 { color: #94a3b8; }
-    .text-slate-500 { color: #64748b; }
-    .text-brand-100 { color: #e0e7ff; }
-    .text-brand-400 { color: #818cf8; }
-    .text-emerald-300 { color: #6ee7b7; }
-    .text-rose-300 { color: #fda4af; }
-    .text-amber-100 { color: #fef3c7; }
-    .text-amber-200 { color: #fde68a; }
-    .text-amber-300 { color: #fcd34d; }
-
-    .border-slate-700 { border-color: #334155; }
-    .border-slate-700\/80 { border-color: rgba(51, 65, 85, 0.8); }
-    .border-slate-800 { border-color: #1e293b; }
-    .border-slate-800\/80 { border-color: rgba(30, 41, 59, 0.8); }
-    .border-amber-400\/40 { border-color: rgba(251, 191, 36, 0.4); }
-    .border-amber-500\/40 { border-color: rgba(245, 158, 11, 0.4); }
-    .border-emerald-500\/20 { border-color: rgba(16, 185, 129, 0.2); }
-    .border-rose-500\/20 { border-color: rgba(244, 63, 94, 0.2); }
-    .border-brand-500\/30 { border-color: rgba(99, 102, 241, 0.3); }
-    .border-brand-500\/30 { border-color: rgba(99, 102, 241, 0.3); border-top-color: #6366f1; }
-
-    .object-cover { object-fit: cover; }
-    .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.35); }
-    .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4); }
-    .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.45); }
-    .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
-    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65); }
-    .backdrop-blur-md { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-    .backdrop-blur-sm { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-
-    .transition { transition: all 150ms ease; }
-    .transition-all { transition: all 150ms ease; }
-    .duration-300 { transition-duration: 300ms; }
-    .opacity-0 { opacity: 0; }
-    .translate-y-2 { transform: translateY(0.5rem); }
-    button:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
-    button:hover:not(:disabled) { filter: brightness(1.08); }
-    button:active:not(:disabled) { transform: scale(0.98); }
-    select { appearance: auto; }
-    input[type="checkbox"] { width: 1rem; height: 1rem; accent-color: #6366f1; cursor: pointer; }
-
-    @media (min-width: 640px) {
-      .sm\:hidden { display: none !important; }
-      .sm\:flex { display: flex; }
-      .sm\:flex-row { flex-direction: row; }
-      .sm\:items-center { align-items: center; }
-      .sm\:justify-between { justify-content: space-between; }
-      .sm\:self-auto { align-self: auto; }
-      .sm\:px-0 { padding-left: 0; padding-right: 0; }
-      .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-      .sm\:py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-      .sm\:py-8 { padding-top: 2rem; padding-bottom: 2rem; }
-      .sm\:p-4 { padding: 1rem; }
-      .sm\:p-6 { padding: 1.5rem; }
-      .sm\:p-8 { padding: 2rem; }
-      .sm\:gap-4 { gap: 1rem; }
-      .sm\:h-32 { height: 8rem; }
-      .sm\:min-h-\[380px\] { min-height: 380px; }
-      .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .sm\:text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-      .sm\:text-base { font-size: 1rem; line-height: 1.5rem; }
-      .sm\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-    }
-    @media (min-width: 768px) {
-      .md\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    }
-    @media (min-width: 1024px) {
-      .lg\:flex-row { flex-direction: row; }
-      .lg\:items-center { align-items: center; }
+      gap: 20px;
     }
 
-    /* Custom checkerboard background for transparent/cropped panorama preview */
-    .checkerboard {
-      background-color: #0f172a;
-      background-image:
-        linear-gradient(45deg, #1e293b 25%, transparent 25%),
-        linear-gradient(-45deg, #1e293b 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #1e293b 75%),
-        linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: grid;
+      place-items: center;
+      color: var(--primary-text);
+      font-weight: 800;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .banner-warning {
+      display: none;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fde68a;
+      font-size: 0.88rem;
+    }
+
+    .banner-warning.visible {
+      display: block;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .count-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      color: var(--primary);
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-alt);
+      padding: 24px 16px;
+      text-align: center;
+      transition: border-color 0.2s, background-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .dropzone p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      max-width: 480px;
+    }
+
+    .picker-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 11px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s, background-color 0.15s, border-color 0.15s;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--border-hover);
+      background: #273549;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+      border-color: var(--primary);
+      font-weight: 700;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      border-color: rgba(244, 63, 94, 0.35);
+      background: var(--danger-bg);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.24);
+      border-color: var(--danger);
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
+    /* Visually hidden file inputs triggered cleanly via labels */
+    .sr-file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 12px;
+    }
+
+    .thumb-card {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .thumb-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #020617;
+      overflow: hidden;
+    }
+
+    .thumb-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb-index {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .thumb-meta {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .thumb-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .thumb-dims {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .thumb-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .control-group {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-label span {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    select {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      font-family: inherit;
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .status-text {
+      color: var(--text-muted);
+    }
+
+    .status-text.error {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .status-text.success {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .canvas-viewport {
+      width: 100%;
+      min-height: 240px;
+      max-height: 68vh;
+      overflow: auto;
+      background:
+        linear-gradient(45deg, #0b1120 25%, transparent 25%),
+        linear-gradient(-45deg, #0b1120 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #0b1120 75%),
+        linear-gradient(-45deg, transparent 75%, #0b1120 75%);
       background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      background-color: #131c31;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      padding: 12px;
     }
-    /* Smooth subtle spinner */
-    @keyframes spinSlow {
-      to { transform: rotate(360deg); }
+
+    #outputCanvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: none;
     }
-    .animate-spin-slow {
-      animation: spinSlow 1.2s linear infinite;
+
+    .empty-preview {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      padding: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .app-shell {
+        padding: 12px 10px 36px;
+      }
+      .panel {
+        padding: 14px;
+      }
+      .thumb-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
-
-  <!-- Top Navigation Header -->
-  <header class="border-b border-slate-800/80 bg-slate-900/70 backdrop-blur-md sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7c4.5 1.8 11.5 1.8 16 0v10c-4.5-1.8-11.5-1.8-16 0V7z" />
-            <circle cx="9" cy="11" r="1.25" fill="currentColor" stroke="none" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 15l3.5-3 3 2.5 2.5-2 3 2.5" />
-          </svg>
-        </div>
+<body>
+  <div class="app-shell">
+    <!-- App Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">P</div>
         <div>
-          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            Panorama Studio
-            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 border border-brand-500/30">
-              Max 5 Photos
-            </span>
-          </h1>
-          <p class="text-xs text-slate-400">100% client-side feature matching &amp; homography stitching</p>
+          <h1>Panorama Studio</h1>
+          <p>100% On-Device Client-Side Image Stitcher (Up to 5 Photos)</p>
         </div>
       </div>
+      <span class="badge" id="offlineBadge">Offline Ready</span>
+    </header>
 
-      <div class="flex items-center gap-3">
-        <!-- Vision Engine Status Pill -->
-        <div id="cvStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-          <span id="cvStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span id="cvStatusText">Stitch Engine Ready</span>
+    <!-- Warning banner shown only if opened via file:// (e.g., iOS Files QuickLook) -->
+    <div id="fileProtocolBanner" class="banner-warning">
+      <strong>iPhone Files App Notice:</strong> You opened this file directly from local storage (<code>file://</code>). iOS blocks local HTML files from reading your Photo Library. Open this app via your <strong>https://</strong> link in Safari and tap <strong>Share &rarr; Add to Home Screen</strong> for full offline photo access.
+    </div>
+
+    <!-- Step 1: Photo Upload & Ordering -->
+    <section class="panel" aria-label="Source Photos">
+      <div class="panel-header">
+        <div class="panel-title">
+          1. Select &amp; Order Photos
+          <span class="count-pill" id="photoCountPill">0 / 5</span>
         </div>
-
-        <!-- Download Standalone App Button -->
-        <button
-          id="downloadAppBtn"
-          type="button"
-          title="Save this complete application as a standalone HTML file"
-          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all shadow-sm active:scale-[0.98]"
-        >
-          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>Download App (.html)</span>
+        <button type="button" class="btn btn-danger btn-sm" id="clearAllBtn" disabled>
+          Clear All
         </button>
       </div>
-    </div>
-  </header>
 
-  <!-- iOS Files / QuickLook Sandbox Notice (Automatically shown only when opened via file:// on iPhone/iPad) -->
-  <div id="iosFileProtocolBanner" class="hidden bg-amber-950/90 border-b border-amber-500/40 px-4 py-3 text-amber-100">
-    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs sm:text-sm">
-      <div>
-        <strong class="font-semibold text-amber-300">Opened in iPhone Files QuickLook:</strong>
-        Apple's built-in file viewer blocks photo uploads from local <code class="px-1 py-0.5 rounded bg-amber-900/80">.html</code> files. Tap <strong>Open in Safari</strong> (bottom-right Safari icon) or open this link in Safari to add photos.
+      <div class="dropzone" id="dropZone">
+        <p>
+          Add <strong>2 to 5 overlapping photos</strong> in order (left-to-right or top-to-bottom).
+          All stitching runs locally on your device—no photos ever leave your browser.
+        </p>
+
+        <div class="picker-actions">
+          <!-- Multi-photo file input -->
+          <label class="btn btn-primary" for="multiPhotoInput" id="multiPickerLabel">
+            + Choose Photos (Up to 5)
+          </label>
+          <input
+            type="file"
+            id="multiPhotoInput"
+            class="sr-file-input"
+            accept="image/*"
+            multiple
+          />
+
+          <!-- Single-photo fallback input for mobile browsers -->
+          <label class="btn" for="singlePhotoInput" id="singlePickerLabel">
+            + Add 1 Photo at a Time
+          </label>
+          <input
+            type="file"
+            id="singlePhotoInput"
+            class="sr-file-input"
+            accept="image/*"
+          />
+        </div>
       </div>
-      <button
-        id="copyPageUrlBtn"
-        type="button"
-        class="self-start sm:self-auto shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-medium text-xs"
-      >
-        Copy Page Link
-      </button>
-    </div>
+
+      <div class="thumb-grid" id="thumbGrid"></div>
+    </section>
+
+    <!-- Step 2: Alignment & Blending Settings -->
+    <section class="panel" aria-label="Stitching Settings">
+      <div class="panel-header">
+        <div class="panel-title">2. Alignment &amp; Blending Controls</div>
+      </div>
+
+      <div class="controls-grid">
+        <div class="control-group">
+          <label class="control-label" for="directionSelect">
+            Stitch Direction
+          </label>
+          <select id="directionSelect">
+            <option value="horizontal" selected>Horizontal (Left &rarr; Right)</option>
+            <option value="vertical">Vertical (Top &rarr; Bottom)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="searchRangeInput">
+            Max Overlap Search <span id="searchRangeVal">45%</span>
+          </label>
+          <input type="range" id="searchRangeInput" min="15" max="75" value="45" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="featherWidthInput">
+            Seam Feather Blend <span id="featherWidthVal">60 px</span>
+          </label>
+          <input type="range" id="featherWidthInput" min="0" max="200" value="60" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="cropModeSelect">
+            Edge Framing
+          </label>
+          <select id="cropModeSelect">
+            <option value="crop" selected>Auto-Crop Uneven Borders</option>
+            <option value="full">Keep Full Uncropped Canvas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <span class="status-text" id="statusText">Add at least 2 overlapping photos to begin.</span>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-primary" id="stitchBtn" disabled>
+            Stitch Panorama
+          </button>
+          <button type="button" class="btn" id="downloadBtn" disabled>
+            Download PNG
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: Output Preview -->
+    <section class="panel" aria-label="Stitched Panorama Result">
+      <div class="panel-header">
+        <div class="panel-title">
+          3. Panorama Result
+          <span class="count-pill" id="outputDimsPill">Not rendered</span>
+        </div>
+      </div>
+
+      <div class="canvas-viewport">
+        <div class="empty-preview" id="emptyPreviewMsg">
+          Your stitched panorama will appear here once processed.
+        </div>
+        <canvas id="outputCanvas"></canvas>
+      </div>
+    </section>
   </div>
 
-  <!-- Toast / Status Notification Banner (Replaces alert()) -->
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
-
-  <!-- Main Workspace -->
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-
-    <!-- Step 1: Upload & Image Queue Card -->
-    <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div>
-          <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-            Select &amp; Order Photos (2 to 5 Images)
-          </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Upload overlapping photos from left to right (or in sequence). You can reorder or remove images before stitching.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2 self-start sm:self-auto">
-          <span id="imageCountBadge" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
-            0 / 5 Photos
-          </span>
-          <button
-            id="clearAllBtn"
-            type="button"
-            class="hidden text-xs font-medium px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 transition"
-          >
-            Clear All
-          </button>
-        </div>
-      </div>
-      <!-- Drag & Drop Zone (Native <label> ensures reliable single-tap file picker on iOS Safari & mobile browsers) -->
-      <div class="space-y-3">
-        <label
-          id="dropZone"
-          for="fileInput"
-          tabindex="0"
-          class="group relative block select-none border-2 border-dashed border-slate-700 hover:border-brand-500 active:border-brand-400 bg-slate-950/60 hover:bg-slate-900/80 rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all touch-manipulation"
-        >
-          <input
-            id="fileInput"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/*"
-            multiple
-            class="sr-only"
-          />
-          <div class="pointer-events-none flex flex-col items-center justify-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-slate-800/90 group-hover:bg-brand-500/20 border border-slate-700 group-hover:border-brand-500/40 flex items-center justify-center transition">
-              <svg class="w-6 h-6 text-slate-300 group-hover:text-brand-400 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm sm:text-base font-medium text-slate-200">
-                <span class="sm:hidden">Tap here to choose photos (up to 5)</span>
-                <span class="hidden sm:inline">Drop up to 5 photos here, or <span class="text-brand-400 underline underline-offset-2">browse files</span></span>
-              </p>
-              <p class="text-xs text-slate-400 mt-1">
-                Supports JPG, PNG, WebP • Best results with 25%–40% overlap between adjacent frames
-              </p>
-            </div>
-          </div>
-        </label>
-
-        <!-- Explicit Mobile Fallback Button (Single-photo picker bypasses iOS WKWebView multi-select bugs) -->
-        <div class="flex sm:hidden items-center justify-center">
-          <label
-            for="singleFileInput"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-slate-800 active:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer select-none touch-manipulation"
-          >
-            <input
-              id="singleFileInput"
-              type="file"
-              accept="image/*"
-              class="sr-only"
-            />
-            <svg class="w-4 h-4 text-brand-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span class="pointer-events-none">Add 1 Photo at a Time (iPhone Safe Mode)</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Thumbnail Preview Grid -->
-      <div id="previewGrid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mt-5"></div>
-
-      <!-- Stitching Options & Primary Action Bar -->
-      <div class="mt-6 pt-5 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-          <!-- Feature Detector Selector -->
-          <label class="flex items-center gap-2 text-slate-300">
-            <span class="text-slate-400 font-medium">Detector:</span>
-            <select id="detectorSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500">
-              <option value="ORB" selected>ORB (Fast &amp; Reliable)</option>
-              <option value="AKAZE">AKAZE (High Detail)</option>
-            </select>
-          </label>
-
-          <!-- Working Resolution Selector -->
-          <label class="flex items-center gap-2 text-slate-300">
-            <span class="text-slate-400 font-medium">Resolution:</span>
-            <select id="resolutionSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500">
-              <option value="1000">Balanced (1000px)</option>
-              <option value="1400" selected>High Quality (1400px)</option>
-              <option value="1800">Ultra (1800px)</option>
-            </select>
-          </label>
-
-          <!-- Auto-Crop Black Borders Checkbox -->
-          <label class="inline-flex items-center gap-2 cursor-pointer select-none text-slate-300" title="Crop to the largest solid rectangle with zero empty/transparent borders">
-            <input id="autoCropCheckbox" type="checkbox" checked class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500" />
-            <span>Crop to solid rectangle</span>
-          </label>
-
-          <!-- Auto-Order Photos Checkbox -->
-          <label class="inline-flex items-center gap-2 cursor-pointer select-none text-slate-300" title="Automatically detect which photos overlap even if uploaded out of left-to-right order">
-            <input id="autoOrderCheckbox" type="checkbox" checked class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500" />
-            <span>Auto-detect overlap order</span>
-          </label>
-        </div>
-
-        <button
-          id="stitchBtn"
-          type="button"
-          disabled
-          class="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed shadow-lg shadow-brand-600/20 disabled:shadow-none transition-all active:scale-[0.99]"
-        >
-          <svg id="stitchBtnIcon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <span id="stitchBtnText">Stitch Panorama</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Step 2: Output Panorama Viewer & Export -->
-    <section id="resultSection" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-        <div>
-          <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-            Stitched Panorama Output
-          </h2>
-          <p id="resultMeta" class="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Upload 2 to 5 overlapping photos and click "Stitch Panorama" to generate your composite image.
-          </p>
-        </div>
-
-        <!-- Export Controls -->
-        <div id="exportControls" class="hidden flex flex-wrap items-center gap-2.5">
-          <select id="exportFormatSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-brand-500">
-            <option value="image/jpeg">JPG (High Quality)</option>
-            <option value="image/png">PNG (Lossless)</option>
-          </select>
-
-          <button
-            id="downloadPanoramaBtn"
-            type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-[0.98]"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span>Download Panorama</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Canvas / Placeholder Stage -->
-      <div class="relative checkerboard rounded-2xl border border-slate-800 min-h-[280px] sm:min-h-[380px] flex items-center justify-center overflow-hidden p-3 sm:p-4">
-        <!-- Empty State -->
-        <div id="emptyResultPlaceholder" class="text-center max-w-md mx-auto py-8 px-4">
-          <div class="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center mx-auto mb-3 text-slate-400">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-              <rect x="3" y="5" width="18" height="14" rx="3" />
-              <circle cx="8.5" cy="10.5" r="1.5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-5-5L5 19" />
-            </svg>
-          </div>
-          <p class="text-sm font-medium text-slate-300">No panorama generated yet</p>
-          <p class="text-xs text-slate-400 mt-1">
-            Your stitched result will appear here at full width with seamless feather blending and perspective alignment.
-          </p>
-        </div>
-
-        <!-- Processing Overlay -->
-        <div id="processingOverlay" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center">
-          <div class="w-12 h-12 rounded-full border-4 border-brand-500/30 border-t-brand-500 animate-spin-slow mb-4"></div>
-          <p id="processingTitle" class="text-base font-semibold text-white">Aligning &amp; Stitching Frames...</p>
-          <p id="processingSubtitle" class="text-xs text-slate-400 mt-1 max-w-sm">
-            Detecting keypoints, estimating RANSAC homographies, and blending seams locally in your browser.
-          </p>
-        </div>
-
-        <!-- Output Panorama Canvas -->
-        <canvas id="outputCanvas" class="hidden max-w-full max-h-[65vh] w-auto h-auto rounded-xl shadow-2xl"></canvas>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Footer -->
-  <footer class="border-t border-slate-800/80 py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
-    All image processing runs 100% locally in your browser with zero external binary dependencies — your photos are never uploaded to any server.
-  </footer>
-
-  <!-- Standalone Client-Side Vision & Stitching Engine -->
   <script>
-    const MAX_IMAGES = 5;
-    const MIN_IMAGES = 2;
+    /**
+     * Panorama Studio — Pure Client-Side Image Stitcher
+     * Uses normalized grayscale SAD template matching with coarse-to-fine search
+     * and linear alpha-feathered compositing across up to 5 images.
+     */
+    const MAX_PHOTOS = 5;
+    const MAX_WORKING_DIM = 1800; // Prevents mobile Safari memory crashes on 48MP photos
 
+    // Application state
     const state = {
-      images: [],
-      cvReady: true,
-      isProcessing: false,
-      lastPanoramaReady: false
+      photos: [], // Array of { id, name, width, height, canvas }
+      hasResult: false
     };
 
-    const el = {
-      dropZone: document.getElementById('dropZone'),
-      fileInput: document.getElementById('fileInput'),
-      singleFileInput: document.getElementById('singleFileInput'),
-      previewGrid: document.getElementById('previewGrid'),
-      imageCountBadge: document.getElementById('imageCountBadge'),
-      clearAllBtn: document.getElementById('clearAllBtn'),
-      detectorSelect: document.getElementById('detectorSelect'),
-      resolutionSelect: document.getElementById('resolutionSelect'),
-      autoCropCheckbox: document.getElementById('autoCropCheckbox'),
-      autoOrderCheckbox: document.getElementById('autoOrderCheckbox'),
-      stitchBtn: document.getElementById('stitchBtn'),
-      stitchBtnText: document.getElementById('stitchBtnText'),
-      resultMeta: document.getElementById('resultMeta'),
-      exportControls: document.getElementById('exportControls'),
-      exportFormatSelect: document.getElementById('exportFormatSelect'),
-      downloadPanoramaBtn: document.getElementById('downloadPanoramaBtn'),
-      downloadAppBtn: document.getElementById('downloadAppBtn'),
-      emptyResultPlaceholder: document.getElementById('emptyResultPlaceholder'),
-      processingOverlay: document.getElementById('processingOverlay'),
-      processingTitle: document.getElementById('processingTitle'),
-      processingSubtitle: document.getElementById('processingSubtitle'),
-      outputCanvas: document.getElementById('outputCanvas'),
-      toastContainer: document.getElementById('toastContainer')
-    };
+    // DOM Elements
+    const fileProtocolBanner = document.getElementById('fileProtocolBanner');
+    const photoCountPill = document.getElementById('photoCountPill');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const dropZone = document.getElementById('dropZone');
+    const multiPhotoInput = document.getElementById('multiPhotoInput');
+    const singlePhotoInput = document.getElementById('singlePhotoInput');
+    const thumbGrid = document.getElementById('thumbGrid');
 
-    /**
-     * Non-blocking toast notification banner (replaces alert())
-     */
-    function showToast(message, type = 'info') {
-      if (!el.toastContainer) return;
-      const styles = {
-        success: 'bg-emerald-950/95 border-emerald-500/50 text-emerald-100',
-        error: 'bg-rose-950/95 border-rose-500/50 text-rose-100',
-        info: 'bg-slate-900/95 border-slate-700 text-slate-100'
-      };
-      const toast = document.createElement('div');
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 backdrop-blur-md ${styles[type] || styles.info}`;
-      toast.textContent = message;
-      el.toastContainer.appendChild(toast);
+    const directionSelect = document.getElementById('directionSelect');
+    const searchRangeInput = document.getElementById('searchRangeInput');
+    const searchRangeVal = document.getElementById('searchRangeVal');
+    const featherWidthInput = document.getElementById('featherWidthInput');
+    const featherWidthVal = document.getElementById('featherWidthVal');
+    const cropModeSelect = document.getElementById('cropModeSelect');
 
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-      }, 4200);
+    const statusText = document.getElementById('statusText');
+    const stitchBtn = document.getElementById('stitchBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const outputDimsPill = document.getElementById('outputDimsPill');
+    const emptyPreviewMsg = document.getElementById('emptyPreviewMsg');
+    const outputCanvas = document.getElementById('outputCanvas');
+
+    // Detect restricted local file:// execution (e.g., iOS QuickLook)
+    if (window.location.protocol === 'file:') {
+      fileProtocolBanner.classList.add('visible');
+    }
+
+    // Range slider UI bindings
+    searchRangeInput.addEventListener('input', () => {
+      searchRangeVal.textContent = `${searchRangeInput.value}%`;
+    });
+
+    featherWidthInput.addEventListener('input', () => {
+      featherWidthVal.textContent = `${featherWidthInput.value} px`;
+    });
+
+    function setStatus(message, type = 'normal') {
+      statusText.textContent = message;
+      statusText.className = 'status-text';
+      if (type === 'error') statusText.classList.add('error');
+      if (type === 'success') statusText.classList.add('success');
     }
 
     /**
-     * Render thumbnail preview cards, reorder controls, and update button states
+     * Decodes a File object into a downscaled HTMLCanvasElement safely on mobile & desktop.
      */
-    function updateUI() {
-      const count = state.images.length;
-      el.imageCountBadge.textContent = `${count} / ${MAX_IMAGES} Photos`;
-      el.clearAllBtn.classList.toggle('hidden', count === 0);
-      el.previewGrid.classList.toggle('hidden', count === 0);
-
-      el.previewGrid.innerHTML = state.images.map((item, idx) => `
-        <div class="group relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex flex-col shadow-md">
-          <div class="relative w-full h-28 sm:h-32 bg-slate-900 overflow-hidden">
-            <img src="${item.url}" alt="${item.name}" class="w-full h-full object-cover block" />
-            <span class="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-950/85 text-white border border-slate-700">
-              #${idx + 1}
-            </span>
-            <button
-              type="button"
-              data-action="remove"
-              data-index="${idx}"
-              title="Remove photo"
-              class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center shadow transition"
-            >
-              <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-2 flex items-center justify-between gap-1 bg-slate-900/90 border-t border-slate-800">
-            <span class="text-[11px] text-slate-400 truncate" title="${item.name}">
-              ${item.width}×${item.height}
-            </span>
-            <div class="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                data-action="left"
-                data-index="${idx}"
-                ${idx === 0 ? 'disabled' : ''}
-                title="Move earlier in sequence"
-                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 transition"
-              >
-                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                data-action="right"
-                data-index="${idx}"
-                ${idx === count - 1 ? 'disabled' : ''}
-                title="Move later in sequence"
-                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 transition"
-              >
-                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-
-      const canStitch = state.cvReady && count >= MIN_IMAGES && !state.isProcessing;
-      el.stitchBtn.disabled = !canStitch;
-      if (state.isProcessing) {
-        el.stitchBtnText.textContent = 'Stitching...';
-      } else if (count < MIN_IMAGES) {
-        el.stitchBtnText.textContent = `Add at least ${MIN_IMAGES} photos`;
-      } else {
-        el.stitchBtnText.textContent = `Stitch ${count} Photos`;
-      }
-    }
-
-    /**
-     * Decode a File into an HTMLImageElement / drawable source safely across iOS Safari,
-     * Android Chrome, and local file:// contexts (where blob: URLs or 48MP photos can fail).
-     */
-    async function decodeImageFile(file) {
-      // Read via FileReader first so local file:// webviews (iOS Files app) never lose file access
-      const dataUrl = await new Promise((resolve, reject) => {
+    function decodeAndScaleFile(file) {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error(`Failed to read ${file.name || 'photo'}`));
+        reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error(`Unsupported image format: ${file.name}`));
+          img.onload = () => {
+            try {
+              let w = img.naturalWidth || img.width;
+              let h = img.naturalHeight || img.height;
+              if (!w || !h) {
+                reject(new Error(`Invalid dimensions for ${file.name}`));
+                return;
+              }
+
+              // Downscale large camera photos so mobile memory stays well within limits
+              const scale = Math.min(1, MAX_WORKING_DIM / Math.max(w, h));
+              const targetW = Math.max(1, Math.round(w * scale));
+              const targetH = Math.max(1, Math.round(h * scale));
+
+              const c = document.createElement('canvas');
+              c.width = targetW;
+              c.height = targetH;
+              const ctx = c.getContext('2d', { willReadFrequently: true });
+              ctx.drawImage(img, 0, 0, targetW, targetH);
+
+              resolve({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                name: file.name || `Photo ${state.photos.length + 1}`,
+                width: targetW,
+                height: targetH,
+                canvas: c,
+                thumbUrl: c.toDataURL('image/jpeg', 0.72)
+              });
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.src = reader.result;
+        };
         reader.readAsDataURL(file);
       });
-
-      const rawImg = await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error(`Could not decode ${file.name || 'photo'}. If it is RAW/HEIC, try converting to JPG.`));
-        img.src = dataUrl;
-      });
-
-      // Downscale oversized 12MP–48MP phone camera photos immediately to prevent iOS memory resets
-      const origW = rawImg.naturalWidth || rawImg.width;
-      const origH = rawImg.naturalHeight || rawImg.height;
-      const maxDim = 2000;
-      const scale = Math.min(1, maxDim / Math.max(origW, origH));
-
-      if (scale < 1) {
-        const w = Math.max(1, Math.round(origW * scale));
-        const h = Math.max(1, Math.round(origH * scale));
-        const c = document.createElement('canvas');
-        c.width = w;
-        c.height = h;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(rawImg, 0, 0, w, h);
-        const scaledUrl = c.toDataURL('image/jpeg', 0.9);
-        const scaledImg = await new Promise((resolve) => {
-          const sImg = new Image();
-          sImg.onload = () => resolve(sImg);
-          sImg.onerror = () => resolve(rawImg);
-          sImg.src = scaledUrl;
-        });
-        return {
-          url: scaledUrl,
-          imgElement: scaledImg,
-          width: scaledImg.naturalWidth || w,
-          height: scaledImg.naturalHeight || h
-        };
-      }
-
-      return {
-        url: dataUrl,
-        imgElement: rawImg,
-        width: origW,
-        height: origH
-      };
     }
 
     /**
-     * Load selected image files (up to 5 total)
+     * Processes an array of File objects and appends them up to MAX_PHOTOS.
      */
-    async function handleFiles(fileList) {
-      const rawFiles = Array.from(fileList || []);
-      if (rawFiles.length === 0) return;
+    async function handleFiles(fileArray) {
+      if (!fileArray || fileArray.length === 0) return;
 
-      const files = rawFiles.filter(f =>
-        !f.type || f.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(f.name || '')
-      );
-      if (files.length === 0) {
-        showToast('Please select valid image files (JPG, PNG, WebP).', 'error');
-        return;
-      }
-
-      const remainingSlots = MAX_IMAGES - state.images.length;
+      const remainingSlots = MAX_PHOTOS - state.photos.length;
       if (remainingSlots <= 0) {
-        showToast(`Maximum ${MAX_IMAGES} photos reached. Remove a photo to add another.`, 'error');
+        setStatus(`Maximum of ${MAX_PHOTOS} photos already added. Remove one to add another.`, 'error');
         return;
       }
 
-      const filesToLoad = files.slice(0, remainingSlots);
-      if (files.length > remainingSlots) {
-        showToast(`Only added ${remainingSlots} photo(s) to stay within the 5-photo limit.`, 'info');
+      const validFiles = fileArray
+        .filter((f) => f && (f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name)))
+        .slice(0, remainingSlots);
+
+      if (validFiles.length === 0) {
+        setStatus('No supported image files were detected.', 'error');
+        return;
       }
 
-      showToast(`Loading ${filesToLoad.length} photo(s)...`, 'info');
+      setStatus(`Loading ${validFiles.length} photo(s)...`);
 
-      for (const file of filesToLoad) {
+      let addedCount = 0;
+      for (const file of validFiles) {
         try {
-          const decoded = await decodeImageFile(file);
-          state.images.push({
-            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-            name: file.name || `Photo ${state.images.length + 1}`,
-            url: decoded.url,
-            imgElement: decoded.imgElement,
-            width: decoded.width,
-            height: decoded.height
-          });
+          const item = await decodeAndScaleFile(file);
+          state.photos.push(item);
+          addedCount++;
           updateUI();
         } catch (err) {
-          showToast(err.message || `Failed to load ${file.name}`, 'error');
+          console.error(err);
+          setStatus(err.message || 'Failed to decode one of the selected photos.', 'error');
         }
       }
 
+      if (addedCount > 0) {
+        if (state.photos.length >= 2) {
+          setStatus(`Ready! ${state.photos.length} photos loaded. Click "Stitch Panorama".`, 'success');
+        } else {
+          setStatus('1 photo loaded. Add at least 1 more overlapping photo.');
+        }
+      }
+    }
+
+    // Synchronous snapshot of FileList on change (prevents iOS WebKit FileList invalidation)
+    function onFileInputChange(event) {
+      const files = event.target && event.target.files ? Array.from(event.target.files) : [];
+      if (files.length > 0) {
+        handleFiles(files);
+      }
+    }
+
+    multiPhotoInput.addEventListener('change', onFileInputChange);
+    singlePhotoInput.addEventListener('change', onFileInputChange);
+
+    // Drag & drop support for desktop browsers
+    ['dragenter', 'dragover'].forEach((evtName) => {
+      dropZone.addEventListener(evtName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((evtName) => {
+      dropZone.addEventListener(evtName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+      });
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+      handleFiles(files);
+    });
+
+    // Queue management actions
+    function movePhoto(index, delta) {
+      const target = index + delta;
+      if (target < 0 || target >= state.photos.length) return;
+      const temp = state.photos[index];
+      state.photos[index] = state.photos[target];
+      state.photos[target] = temp;
       updateUI();
     }
 
-    // Dropzone & File Input Listeners (Native <label for="fileInput"> handles taps directly on mobile)
-    el.dropZone.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        el.fileInput.click();
+    function removePhoto(index) {
+      state.photos.splice(index, 1);
+      updateUI();
+      if (state.photos.length < 2) {
+        setStatus('Add at least 2 overlapping photos to begin.');
       }
+    }
+
+    clearAllBtn.addEventListener('click', () => {
+      state.photos = [];
+      state.hasResult = false;
+      outputCanvas.style.display = 'none';
+      emptyPreviewMsg.style.display = 'block';
+      outputDimsPill.textContent = 'Not rendered';
+      downloadBtn.disabled = true;
+      updateUI();
+      setStatus('Cleared all photos. Add 2 to 5 overlapping photos to begin.');
     });
-    let isHandlingInput = false;
-    const onFileInputPicked = async (e) => {
-      if (isHandlingInput) return;
-      const inputEl = e.target;
-      const pickedFiles = inputEl && inputEl.files ? Array.from(inputEl.files) : [];
-      if (pickedFiles.length === 0) return;
 
-      isHandlingInput = true;
-      try {
-        await handleFiles(pickedFiles);
-      } finally {
-        // Only clear input.value on non-iOS browsers; resetting .value on iOS WebKit can invalidate pending File reads
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        if (!isIOS) {
-          try { inputEl.value = ''; } catch (_) {}
-        }
-        isHandlingInput = false;
-      }
-    };
-    el.fileInput.addEventListener('change', onFileInputPicked);
-    if (el.singleFileInput) {
-      el.singleFileInput.addEventListener('change', onFileInputPicked);
-    }
+    /**
+     * Renders the thumbnail list and updates button states.
+     */
+    function updateUI() {
+      const count = state.photos.length;
+      photoCountPill.textContent = `${count} / ${MAX_PHOTOS}`;
+      clearAllBtn.disabled = count === 0;
+      stitchBtn.disabled = count < 2;
 
-    // Detect iOS local file:// QuickLook sandbox where Apple blocks <input type="file"> file reads
-    const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOSDevice && window.location.protocol === 'file:') {
-      const banner = document.getElementById('iosFileProtocolBanner');
-      if (banner) banner.classList.remove('hidden');
-    }
-    const copyPageUrlBtn = document.getElementById('copyPageUrlBtn');
-    if (copyPageUrlBtn) {
-      copyPageUrlBtn.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = window.location.href;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        tempInput.remove();
-        showToast('Link copied! Paste it into Safari or host on Netlify/GitHub Pages.', 'info');
+      thumbGrid.innerHTML = '';
+      state.photos.forEach((photo, idx) => {
+        const card = document.createElement('div');
+        card.className = 'thumb-card';
+
+        card.innerHTML = `
+          <div class="thumb-img-wrap">
+            <img src="${photo.thumbUrl}" alt="Photo ${idx + 1}" />
+            <span class="thumb-index">#${idx + 1}</span>
+          </div>
+          <div class="thumb-meta">
+            <div class="thumb-name" title="${photo.name}">${photo.name}</div>
+            <div class="thumb-dims">${photo.width} &times; ${photo.height} px</div>
+            <div class="thumb-controls">
+              <div style="display:flex; gap:4px;">
+                <button type="button" class="btn btn-sm" data-action="left" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move Earlier">&larr;</button>
+                <button type="button" class="btn btn-sm" data-action="right" data-idx="${idx}" ${idx === count - 1 ? 'disabled' : ''} title="Move Later">&rarr;</button>
+              </div>
+              <button type="button" class="btn btn-danger btn-sm" data-action="remove" data-idx="${idx}" title="Remove">Remove</button>
+            </div>
+          </div>
+        `;
+        thumbGrid.appendChild(card);
       });
     }
-    el.dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      el.dropZone.classList.add('border-brand-500', 'bg-slate-900');
-    });
-    el.dropZone.addEventListener('dragleave', () => {
-      el.dropZone.classList.remove('border-brand-500', 'bg-slate-900');
-    });
-    el.dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      el.dropZone.classList.remove('border-brand-500', 'bg-slate-900');
-      handleFiles(e.dataTransfer.files);
-    });
 
-    // Thumbnail Reorder & Remove Actions
-    el.previewGrid.addEventListener('click', (e) => {
+    thumbGrid.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
+      const idx = Number(btn.dataset.idx);
       const action = btn.dataset.action;
-      const idx = Number(btn.dataset.index);
-
-      if (action === 'remove') {
-        const [removed] = state.images.splice(idx, 1);
-        if (removed && removed.url.startsWith('blob:')) URL.revokeObjectURL(removed.url);
-      } else if (action === 'left' && idx > 0) {
-        [state.images[idx - 1], state.images[idx]] = [state.images[idx], state.images[idx - 1]];
-      } else if (action === 'right' && idx < state.images.length - 1) {
-        [state.images[idx + 1], state.images[idx]] = [state.images[idx], state.images[idx + 1]];
-      }
-      updateUI();
+      if (action === 'left') movePhoto(idx, -1);
+      if (action === 'right') movePhoto(idx, 1);
+      if (action === 'remove') removePhoto(idx);
     });
 
-    el.clearAllBtn.addEventListener('click', () => {
-      state.images.forEach(item => {
-        if (item.url && item.url.startsWith('blob:')) URL.revokeObjectURL(item.url);
-      });
-      state.images = [];
-      updateUI();
-    });
-
-    // =========================================================================
-    // PURE-JS / CANVAS COMPUTER VISION & STITCHING PIPELINE (INSTANT STARTUP)
-    // =========================================================================
-
     /**
-     * Draw an image onto an offscreen canvas scaled to maxDim and extract RGBA buffer
+     * Extracts a normalized luminance buffer from a canvas at a given scale factor
+     * so lighting exposure differences between adjacent photos don't skew alignment.
      */
-    function imageToResizedFrame(imgElement, maxDim) {
-      const origW = imgElement.naturalWidth;
-      const origH = imgElement.naturalHeight;
-      const scale = Math.min(1, maxDim / Math.max(origW, origH));
-      const w = Math.max(1, Math.round(origW * scale));
-      const h = Math.max(1, Math.round(origH * scale));
+    function buildLuminanceMap(canvas, scale) {
+      const w = Math.max(16, Math.round(canvas.width * scale));
+      const h = Math.max(16, Math.round(canvas.height * scale));
+      const tmp = document.createElement('canvas');
+      tmp.width = w;
+      tmp.height = h;
+      const ctx = tmp.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(canvas, 0, 0, w, h);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(imgElement, 0, 0, w, h);
-      const imageData = ctx.getImageData(0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const lum = new Float32Array(w * h);
+      let sum = 0;
 
-      return {
-        width: w,
-        height: h,
-        rgba: imageData.data
-      };
+      for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+        const v = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        lum[p] = v;
+        sum += v;
+      }
+
+      // Normalize zero-mean & unit-variance for exposure invariance
+      const mean = sum / lum.length;
+      let sqSum = 0;
+      for (let i = 0; i < lum.length; i++) {
+        const d = lum[i] - mean;
+        lum[i] = d;
+        sqSum += d * d;
+      }
+      const std = Math.sqrt(sqSum / lum.length) || 1;
+      for (let i = 0; i < lum.length; i++) {
+        lum[i] /= std;
+      }
+
+      return { w, h, lum };
     }
 
     /**
-     * Convert RGBA to smoothed, locally contrast-normalized grayscale Uint8Array
+     * Finds the best (dx, dy) translation placing image B relative to image A
+     * using coarse-to-fine normalized Sum of Absolute Differences (SAD).
      */
-    function computeNormalizedGray(rgba, width, height) {
-      const n = width * height;
-      const raw = new Float32Array(n);
-      for (let i = 0; i < n; i++) {
-        const o = i * 4;
-        raw[i] = 0.299 * rgba[o] + 0.587 * rgba[o + 1] + 0.114 * rgba[o + 2];
-      }
+    function findPairOffset(canvasA, canvasB, direction, maxOverlapRatio) {
+      const coarseScale = 0.22;
+      const fineScale = 0.5;
 
-      // Fast 3x3 Gaussian blur to suppress sensor noise
-      const blur = new Float32Array(n);
-      for (let y = 0; y < height; y++) {
-        const ym = Math.max(0, y - 1) * width;
-        const y0 = y * width;
-        const yp = Math.min(height - 1, y + 1) * width;
-        for (let x = 0; x < width; x++) {
-          const xm = Math.max(0, x - 1);
-          const xp = Math.min(width - 1, x + 1);
-          blur[y0 + x] = (
-            raw[ym + xm] + 2 * raw[ym + x] + raw[ym + xp] +
-            2 * raw[y0 + xm] + 4 * raw[y0 + x] + 2 * raw[y0 + xp] +
-            raw[yp + xm] + 2 * raw[yp + x] + raw[yp + xp]
-          ) * 0.0625;
-        }
-      }
+      const mapA = buildLuminanceMap(canvasA, coarseScale);
+      const mapB = buildLuminanceMap(canvasB, coarseScale);
 
-      // Tile-based local contrast normalization (lightweight CLAHE)
-      const tilesX = 8;
-      const tilesY = 8;
-      const tileW = Math.ceil(width / tilesX);
-      const tileH = Math.ceil(height / tilesY);
-      const out = new Uint8Array(n);
-
-      for (let ty = 0; ty < tilesY; ty++) {
-        const yStart = ty * tileH;
-        const yEnd = Math.min(height, yStart + tileH);
-        for (let tx = 0; tx < tilesX; tx++) {
-          const xStart = tx * tileW;
-          const xEnd = Math.min(width, xStart + tileW);
-
-          let minV = 255, maxV = 0;
-          for (let y = yStart; y < yEnd; y++) {
-            const row = y * width;
-            for (let x = xStart; x < xEnd; x++) {
-              const v = blur[row + x];
-              if (v < minV) minV = v;
-              if (v > maxV) maxV = v;
-            }
-          }
-          const span = Math.max(24, maxV - minV);
-          const scale = 255 / span;
-          for (let y = yStart; y < yEnd; y++) {
-            const row = y * width;
-            for (let x = xStart; x < xEnd; x++) {
-              const v = (blur[row + x] - minV) * scale;
-              out[row + x] = v < 0 ? 0 : v > 255 ? 255 : v;
-            }
-          }
-        }
-      }
-
-      return out;
-    }
-
-    // Deterministic 256-bit BRIEF sampling pattern within radius 15
-    const BRIEF_PAIRS = (() => {
-      const pairs = new Int8Array(256 * 4);
-      let seed = 13374201;
-      const rand = () => {
-        seed = (seed * 1664525 + 1013904223) >>> 0;
-        return (seed / 4294967296) * 2 - 1;
-      };
-      for (let i = 0; i < 256; i++) {
-        pairs[i * 4 + 0] = Math.round(rand() * 14);
-        pairs[i * 4 + 1] = Math.round(rand() * 14);
-        pairs[i * 4 + 2] = Math.round(rand() * 14);
-        pairs[i * 4 + 3] = Math.round(rand() * 14);
-      }
-      return pairs;
-    })();
-
-    /**
-     * Detect Shi-Tomasi / Harris corners with spatial grid bucketing and 256-bit BRIEF descriptors
-     */
-    function extractImageFeatures(frame, detectorType) {
-      const { width, height, rgba } = frame;
-      const gray = computeNormalizedGray(rgba, width, height);
-      const margin = 18;
-      const step = detectorType === 'AKAZE' ? 2 : 3;
-
-      // Compute Harris/Shi-Tomasi corner response
-      const response = new Float32Array(width * height);
-      for (let y = margin; y < height - margin; y += step) {
-        for (let x = margin; x < width - margin; x += step) {
-          let sxx = 0, syy = 0, sxy = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            const row = (y + dy) * width;
-            const rowUp = (y + dy - 1) * width;
-            const rowDn = (y + dy + 1) * width;
-            for (let dx = -1; dx <= 1; dx++) {
-              const cx = x + dx;
-              const ix = gray[row + cx + 1] - gray[row + cx - 1];
-              const iy = gray[rowDn + cx] - gray[rowUp + cx];
-              sxx += ix * ix;
-              syy += iy * iy;
-              sxy += ix * iy;
-            }
-          }
-          const det = sxx * syy - sxy * sxy;
-          const trace = sxx + syy;
-          const r = det - 0.04 * trace * trace;
-          if (r > 1200) {
-            response[y * width + x] = r;
-          }
-        }
-      }
-
-      // Spatial bucketing so keypoints cover walls, ceiling, and foreground evenly
-      const gridCols = 24;
-      const gridRows = 18;
-      const cellW = width / gridCols;
-      const cellH = height / gridRows;
-      const maxPerCell = detectorType === 'AKAZE' ? 6 : 5;
-      const buckets = Array.from({ length: gridCols * gridRows }, () => []);
-
-      for (let y = margin; y < height - margin; y += step) {
-        const gy = Math.min(gridRows - 1, Math.floor(y / cellH));
-        for (let x = margin; x < width - margin; x += step) {
-          const r = response[y * width + x];
-          if (r <= 0) continue;
-
-          // Non-maximum suppression in 5x5 neighborhood
-          let isMax = true;
-          for (let ny = -2; ny <= 2 && isMax; ny++) {
-            const rRow = (y + ny) * width;
-            for (let nx = -2; nx <= 2; nx++) {
-              if (nx === 0 && ny === 0) continue;
-              if (response[rRow + x + nx] > r) {
-                isMax = false;
-                break;
-              }
-            }
-          }
-          if (!isMax) continue;
-
-          const gx = Math.min(gridCols - 1, Math.floor(x / cellW));
-          const bucket = buckets[gy * gridCols + gx];
-          bucket.push({ x, y, r });
-        }
-      }
-
-      const keypoints = [];
-      for (const bucket of buckets) {
-        if (bucket.length === 0) continue;
-        bucket.sort((a, b) => b.r - a.r);
-        for (let k = 0; k < Math.min(maxPerCell, bucket.length); k++) {
-          keypoints.push(bucket[k]);
-        }
-      }
-
-      // Compute 256-bit (8 x Uint32) BRIEF descriptors for each keypoint
-      const descriptors = new Uint32Array(keypoints.length * 8);
-      for (let i = 0; i < keypoints.length; i++) {
-        const { x, y } = keypoints[i];
-        const descOffset = i * 8;
-        for (let w = 0; w < 8; w++) {
-          let word = 0;
-          const bitStart = w * 32;
-          for (let b = 0; b < 32; b++) {
-            const pIdx = (bitStart + b) * 4;
-            const x1 = x + BRIEF_PAIRS[pIdx + 0];
-            const y1 = y + BRIEF_PAIRS[pIdx + 1];
-            const x2 = x + BRIEF_PAIRS[pIdx + 2];
-            const y2 = y + BRIEF_PAIRS[pIdx + 3];
-            if (gray[y1 * width + x1] < gray[y2 * width + x2]) {
-              word |= (1 << b);
-            }
-          }
-          descriptors[descOffset + w] = word >>> 0;
-        }
-      }
-
-      return {
-        width,
-        height,
-        keypoints,
-        descriptors
-      };
-    }
-
-    /**
-     * Fast 32-bit Hamming population count
-     */
-    function popcount32(x) {
-      x = x - ((x >>> 1) & 0x55555555);
-      x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
-      return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
-    }
-
-    /**
-     * Solve 8x8 linear system via Gaussian elimination with partial pivoting
-     */
-    function solveLinear8(A, b) {
-      const n = 8;
-      const M = A.map((row, i) => [...row, b[i]]);
-      for (let col = 0; col < n; col++) {
-        let maxRow = col;
-        for (let row = col + 1; row < n; row++) {
-          if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
-        }
-        if (Math.abs(M[maxRow][col]) < 1e-10) return null;
-        [M[col], M[maxRow]] = [M[maxRow], M[col]];
-        const pivot = M[col][col];
-        for (let j = col; j <= n; j++) M[col][j] /= pivot;
-        for (let row = 0; row < n; row++) {
-          if (row === col) continue;
-          const factor = M[row][col];
-          for (let j = col; j <= n; j++) M[row][j] -= factor * M[col][j];
-        }
-      }
-      return M.map(row => row[n]);
-    }
-
-    /**
-     * Fit a 3x3 Homography from 4+ point correspondences using normalized DLT
-     */
-    function computeHomographyDLT(srcPts, dstPts) {
-      const count = srcPts.length;
-      if (count < 4) return null;
-
-      // Hartley coordinate normalization for numerical stability
-      let sx = 0, sy = 0, dx = 0, dy = 0;
-      for (let i = 0; i < count; i++) {
-        sx += srcPts[i].x; sy += srcPts[i].y;
-        dx += dstPts[i].x; dy += dstPts[i].y;
-      }
-      sx /= count; sy /= count; dx /= count; dy /= count;
-
-      let sDist = 0, dDist = 0;
-      for (let i = 0; i < count; i++) {
-        sDist += Math.hypot(srcPts[i].x - sx, srcPts[i].y - sy);
-        dDist += Math.hypot(dstPts[i].x - dx, dstPts[i].y - dy);
-      }
-      if (sDist < 1e-6 || dDist < 1e-6) return null;
-
-      const sScale = (Math.SQRT2 * count) / sDist;
-      const dScale = (Math.SQRT2 * count) / dDist;
-
-      // Build normal equations A^T A h = A^T b
-      const ATA = Array.from({ length: 8 }, () => new Float64Array(8));
-      const ATb = new Float64Array(8);
-
-      for (let i = 0; i < count; i++) {
-        const x = (srcPts[i].x - sx) * sScale;
-        const y = (srcPts[i].y - sy) * sScale;
-        const u = (dstPts[i].x - dx) * dScale;
-        const v = (dstPts[i].y - dy) * dScale;
-
-        const r1 = [x, y, 1, 0, 0, 0, -u * x, -u * y];
-        const r2 = [0, 0, 0, x, y, 1, -v * x, -v * y];
-
-        for (let r = 0; r < 8; r++) {
-          ATb[r] += r1[r] * u + r2[r] * v;
-          for (let c = 0; c < 8; c++) {
-            ATA[r][c] += r1[r] * r1[c] + r2[r] * r2[c];
-          }
-        }
-      }
-
-      const h = solveLinear8(ATA, ATb);
-      if (!h) return null;
-
-      const Hnorm = [
-        h[0], h[1], h[2],
-        h[3], h[4], h[5],
-        h[6], h[7], 1
-      ];
-
-      // Denormalize: T_dst^-1 * Hnorm * T_src
-      const Tsrc = [
-        sScale, 0, -sScale * sx,
-        0, sScale, -sScale * sy,
-        0, 0, 1
-      ];
-      const TdstInv = [
-        1 / dScale, 0, dx,
-        0, 1 / dScale, dy,
-        0, 0, 1
-      ];
-
-      const H = matMul3x3(TdstInv, matMul3x3(Hnorm, Tsrc));
-      if (Math.abs(H[8]) < 1e-8) return null;
-      for (let i = 0; i < 9; i++) H[i] /= H[8];
-      return H;
-    }
-
-    /**
-     * Fit a 2D Similarity Transform (uniform scale + rotation + translation) from 2+ points
-     */
-    function fitSimilarity2D(srcPts, dstPts) {
-      const n = srcPts.length;
-      if (n < 2) return null;
-      let sx = 0, sy = 0, dx = 0, dy = 0;
-      for (let i = 0; i < n; i++) {
-        sx += srcPts[i].x; sy += srcPts[i].y;
-        dx += dstPts[i].x; dy += dstPts[i].y;
-      }
-      sx /= n; sy /= n; dx /= n; dy /= n;
-
-      let numA = 0, numB = 0, denom = 0;
-      for (let i = 0; i < n; i++) {
-        const ux = srcPts[i].x - sx;
-        const uy = srcPts[i].y - sy;
-        const vx = dstPts[i].x - dx;
-        const vy = dstPts[i].y - dy;
-        numA += ux * vx + uy * vy;
-        numB += ux * vy - uy * vx;
-        denom += ux * ux + uy * uy;
-      }
-      if (denom < 1e-6) return null;
-      const a = numA / denom;
-      const b = numB / denom;
-      const tx = dx - (a * sx - b * sy);
-      const ty = dy - (b * sx + a * sy);
-      return [
-        a, -b, tx,
-        b,  a, ty,
-        0,  0, 1
-      ];
-    }
-
-    /**
-     * Match two precomputed feature sets via BRIEF Hamming distance + Lowe's ratio test
-     * and run RANSAC for Perspective Homography, Similarity, and Translation transforms.
-     */
-    function matchFeaturePair(srcFeat, dstFeat) {
-      const n1 = srcFeat.keypoints.length;
-      const n2 = dstFeat.keypoints.length;
-      if (n1 < 8 || n2 < 8) return null;
-
-      const d1 = srcFeat.descriptors;
-      const d2 = dstFeat.descriptors;
-      const goodSrc = [];
-      const goodDst = [];
-
-      for (let i = 0; i < n1; i++) {
-        const o1 = i * 8;
-        let bestDist = 257;
-        let secondDist = 257;
-        let bestJ = -1;
-
-        for (let j = 0; j < n2; j++) {
-          const o2 = j * 8;
-          const dist =
-            popcount32(d1[o1 + 0] ^ d2[o2 + 0]) +
-            popcount32(d1[o1 + 1] ^ d2[o2 + 1]) +
-            popcount32(d1[o1 + 2] ^ d2[o2 + 2]) +
-            popcount32(d1[o1 + 3] ^ d2[o2 + 3]) +
-            popcount32(d1[o1 + 4] ^ d2[o2 + 4]) +
-            popcount32(d1[o1 + 5] ^ d2[o2 + 5]) +
-            popcount32(d1[o1 + 6] ^ d2[o2 + 6]) +
-            popcount32(d1[o1 + 7] ^ d2[o2 + 7]);
-
-          if (dist < bestDist) {
-            secondDist = bestDist;
-            bestDist = dist;
-            bestJ = j;
-          } else if (dist < secondDist) {
-            secondDist = dist;
-          }
-        }
-
-        if (bestJ >= 0 && bestDist < 72 && bestDist < 0.80 * secondDist) {
-          goodSrc.push(srcFeat.keypoints[i]);
-          goodDst.push(dstFeat.keypoints[bestJ]);
-        }
-      }
-
-      const numGood = goodSrc.length;
-      if (numGood < 6) return null;
-
-      // 1. Median-filtered pure 2D translation fallback (always finite w = 1)
-      const dxs = goodSrc.map((p, i) => goodDst[i].x - p.x);
-      const dys = goodSrc.map((p, i) => goodDst[i].y - p.y);
-      const medDx = [...dxs].sort((a, b) => a - b)[Math.floor(numGood / 2)];
-      const medDy = [...dys].sort((a, b) => a - b)[Math.floor(numGood / 2)];
-
-      let transInliers = 0, sumDx = 0, sumDy = 0;
-      const transTol = Math.max(srcFeat.width, srcFeat.height) * 0.045;
-      for (let i = 0; i < numGood; i++) {
-        if (Math.hypot(dxs[i] - medDx, dys[i] - medDy) <= transTol) {
-          transInliers++;
-          sumDx += dxs[i];
-          sumDy += dys[i];
-        }
-      }
-      const translationH = [
-        1, 0, transInliers > 0 ? sumDx / transInliers : medDx,
-        0, 1, transInliers > 0 ? sumDy / transInliers : medDy,
-        0, 0, 1
-      ];
-
-      // 2. RANSAC 2D Similarity Transform (2-point samples)
-      let bestSimH = null;
-      let bestSimInliers = [];
-      const ransacThresh = Math.max(4.5, Math.max(srcFeat.width, srcFeat.height) * 0.005);
-
-      let rng = 987654321;
-      const nextIdx = (max) => {
-        rng = (rng * 1664525 + 1013904223) >>> 0;
-        return rng % max;
-      };
-
-      for (let iter = 0; iter < 300; iter++) {
-        const i1 = nextIdx(numGood);
-        const i2 = nextIdx(numGood);
-        if (i1 === i2) continue;
-        const cand = fitSimilarity2D([goodSrc[i1], goodSrc[i2]], [goodDst[i1], goodDst[i2]]);
-        if (!cand) continue;
-
-        const inliers = [];
-        for (let k = 0; k < numGood; k++) {
-          const p = projectPoint(cand, goodSrc[k].x, goodSrc[k].y);
-          if (Math.hypot(p.x - goodDst[k].x, p.y - goodDst[k].y) < ransacThresh) {
-            inliers.push(k);
-          }
-        }
-        if (inliers.length > bestSimInliers.length) {
-          bestSimInliers = inliers;
-          bestSimH = cand;
-        }
-      }
-
-      let affineH = null;
-      if (bestSimInliers.length >= 6) {
-        const refined = fitSimilarity2D(
-          bestSimInliers.map(k => goodSrc[k]),
-          bestSimInliers.map(k => goodDst[k])
-        );
-        if (refined && isReasonableTransform(refined, srcFeat.width, srcFeat.height)) {
-          affineH = refined;
-        }
-      }
-
-      // 3. RANSAC Full 3x3 Perspective Homography (4-point DLT samples)
-      let bestPerspH = null;
-      let bestPerspInliers = [];
-
-      if (numGood >= 10) {
-        for (let iter = 0; iter < 500; iter++) {
-          const idxs = new Set();
-          while (idxs.size < 4) idxs.add(nextIdx(numGood));
-          const arr = Array.from(idxs);
-          const cand = computeHomographyDLT(
-            arr.map(k => goodSrc[k]),
-            arr.map(k => goodDst[k])
-          );
-          if (!cand) continue;
-
-          const inliers = [];
-          for (let k = 0; k < numGood; k++) {
-            const p = projectPoint(cand, goodSrc[k].x, goodSrc[k].y);
-            if (Number.isFinite(p.x) && Math.hypot(p.x - goodDst[k].x, p.y - goodDst[k].y) < ransacThresh) {
-              inliers.push(k);
-            }
-          }
-          if (inliers.length > bestPerspInliers.length) {
-            bestPerspInliers = inliers;
-            bestPerspH = cand;
-          }
-        }
-      }
-
-      let perspectiveH = null;
-      if (bestPerspInliers.length >= 10) {
-        const refinedH = computeHomographyDLT(
-          bestPerspInliers.map(k => goodSrc[k]),
-          bestPerspInliers.map(k => goodDst[k])
-        );
-        if (refinedH && isReasonableTransform(refinedH, srcFeat.width, srcFeat.height)) {
-          perspectiveH = refinedH;
-        }
-      }
-
-      const inlierCount = Math.max(
-        transInliers,
-        bestSimInliers.length,
-        perspectiveH ? bestPerspInliers.length : 0
+      const isHoriz = direction === 'horizontal';
+      const minOverlap = Math.max(10, Math.round((isHoriz ? Math.min(mapA.w, mapB.w) : Math.min(mapA.h, mapB.h)) * 0.06));
+      const maxOverlap = Math.max(
+        minOverlap + 4,
+        Math.round((isHoriz ? Math.min(mapA.w, mapB.w) : Math.min(mapA.h, mapB.h)) * maxOverlapRatio)
       );
-      const safeH = affineH || (transInliers >= 4 ? translationH : null);
-      const chosenH = perspectiveH || safeH;
-      if (!chosenH || !safeH) return null;
+
+      // Search range along primary axis and perpendicular drift
+      const dxMin = isHoriz ? mapA.w - maxOverlap : -Math.round(mapA.w * 0.2);
+      const dxMax = isHoriz ? mapA.w - minOverlap : Math.round(mapA.w * 0.2);
+      const dyMin = isHoriz ? -Math.round(mapA.h * 0.2) : mapA.h - maxOverlap;
+      const dyMax = isHoriz ? Math.round(mapA.h * 0.2) : mapA.h - minOverlap;
+
+      let bestScore = Infinity;
+      let bestDx = isHoriz ? Math.round(mapA.w * 0.75) : 0;
+      let bestDy = isHoriz ? 0 : Math.round(mapA.h * 0.75);
+
+      function evaluateOffset(mA, mB, dx, dy, step) {
+        const xStartA = Math.max(0, dx);
+        const yStartA = Math.max(0, dy);
+        const xEndA = Math.min(mA.w, dx + mB.w);
+        const yEndA = Math.min(mA.h, dy + mB.h);
+
+        const ovW = xEndA - xStartA;
+        const ovH = yEndA - yStartA;
+        if (ovW < 6 || ovH < 6) return Infinity;
+
+        let sad = 0;
+        let samples = 0;
+
+        for (let y = yStartA; y < yEndA; y += step) {
+          const rowA = y * mA.w;
+          const rowB = (y - dy) * mB.w;
+          for (let x = xStartA; x < xEndA; x += step) {
+            const diff = mA.lum[rowA + x] - mB.lum[rowB + (x - dx)];
+            sad += diff < 0 ? -diff : diff;
+            samples++;
+          }
+        }
+
+        if (samples === 0) return Infinity;
+        // Slight penalty on tiny overlaps to avoid false edge matches
+        const areaBonus = 1 + 0.15 * (1 - (ovW * ovH) / (mA.w * mA.h));
+        return (sad / samples) * areaBonus;
+      }
+
+      // Coarse pass
+      for (let dy = dyMin; dy <= dyMax; dy += 2) {
+        for (let dx = dxMin; dx <= dxMax; dx += 2) {
+          const score = evaluateOffset(mapA, mapB, dx, dy, 2);
+          if (score < bestScore) {
+            bestScore = score;
+            bestDx = dx;
+            bestDy = dy;
+          }
+        }
+      }
+
+      // Fine pass around coarse optimum
+      const fineA = buildLuminanceMap(canvasA, fineScale);
+      const fineB = buildLuminanceMap(canvasB, fineScale);
+      const ratio = fineScale / coarseScale;
+
+      let fineDx = Math.round(bestDx * ratio);
+      let fineDy = Math.round(bestDy * ratio);
+      let fineBestScore = Infinity;
+      const radius = 8;
+
+      for (let dy = fineDy - radius; dy <= fineDy + radius; dy++) {
+        for (let dx = fineDx - radius; dx <= fineDx + radius; dx++) {
+          const score = evaluateOffset(fineA, fineB, dx, dy, 1);
+          if (score < fineBestScore) {
+            fineBestScore = score;
+            fineDx = dx;
+            fineDy = dy;
+          }
+        }
+      }
 
       return {
-        H: chosenH,
-        safeH,
-        transH: translationH,
-        inliers: inlierCount
+        dx: Math.round(fineDx / fineScale),
+        dy: Math.round(fineDy / fineScale)
       };
     }
 
     /**
-     * Multiply two 3x3 matrices represented as 9-element row-major arrays
+     * Stitches all queued photos with linear alpha feathering across overlap seams.
      */
-    function matMul3x3(A, B) {
-      const C = new Array(9);
-      for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-          C[r * 3 + c] =
-            A[r * 3 + 0] * B[0 * 3 + c] +
-            A[r * 3 + 1] * B[1 * 3 + c] +
-            A[r * 3 + 2] * B[2 * 3 + c];
-        }
-      }
-      return C;
-    }
+    async function stitchPanorama() {
+      if (state.photos.length < 2) return;
 
-    /**
-     * Invert a 3x3 matrix represented as a 9-element row-major array
-     */
-    function invert3x3(m) {
-      const a = m[0], b = m[1], c = m[2];
-      const d = m[3], e = m[4], f = m[5];
-      const g = m[6], h = m[7], i = m[8];
+      stitchBtn.disabled = true;
+      downloadBtn.disabled = true;
+      setStatus('Aligning overlapping regions...');
 
-      const A = e * i - f * h;
-      const B = -(d * i - f * g);
-      const C = d * h - e * g;
-      const D = -(b * i - c * h);
-      const E = a * i - c * g;
-      const F = -(a * h - b * g);
-      const G = b * f - c * e;
-      const H = -(a * f - c * d);
-      const I = a * e - b * d;
+      // Allow UI paint before heavy pixel math
+      await new Promise((r) => setTimeout(r, 30));
 
-      const det = a * A + b * B + c * C;
-      if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
-      const invDet = 1.0 / det;
-      return [
-        A * invDet, D * invDet, G * invDet,
-        B * invDet, E * invDet, H * invDet,
-        C * invDet, F * invDet, I * invDet
-      ];
-    }
-
-    /**
-     * Project a 2D point (x, y) by a 3x3 homography array H
-     */
-    function projectPoint(H, x, y) {
-      const w = H[6] * x + H[7] * y + H[8];
-      if (!Number.isFinite(w) || w <= 1e-4) {
-        return { x: NaN, y: NaN, w };
-      }
-      return {
-        x: (H[0] * x + H[1] * y + H[2]) / w,
-        y: (H[3] * x + H[4] * y + H[5]) / w,
-        w
-      };
-    }
-
-    /**
-     * Validate that a 3x3 transform maps image corners cleanly without perspective flips or collapse
-     */
-    function isReasonableTransform(H, width, height) {
-      if (!H || H.length !== 9 || !H.every(Number.isFinite)) return false;
-
-      const pts = [
-        projectPoint(H, 0, 0),
-        projectPoint(H, width, 0),
-        projectPoint(H, width, height),
-        projectPoint(H, 0, height)
-      ];
-
-      if (pts.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.w <= 0.25)) {
-        return false;
-      }
-
-      const maxSpan = Math.max(width, height) * 5;
-      for (const p of pts) {
-        if (Math.abs(p.x) > maxSpan || Math.abs(p.y) > maxSpan) return false;
-      }
-
-      // Check strict convexity of projected quad
-      let sign = 0;
-      for (let i = 0; i < 4; i++) {
-        const p0 = pts[i];
-        const p1 = pts[(i + 1) % 4];
-        const p2 = pts[(i + 2) % 4];
-        const cross = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
-        if (Math.abs(cross) < 1e-3) return false;
-        const s = cross > 0 ? 1 : -1;
-        if (sign === 0) sign = s;
-        else if (sign !== s) return false;
-      }
-
-      const area = 0.5 * Math.abs(
-        (pts[0].x * pts[1].y - pts[1].x * pts[0].y) +
-        (pts[1].x * pts[2].y - pts[2].x * pts[1].y) +
-        (pts[2].x * pts[3].y - pts[3].x * pts[2].y) +
-        (pts[3].x * pts[0].y - pts[0].x * pts[3].y)
-      );
-      const origArea = width * height;
-      return area > origArea * 0.2 && area < origArea * 4.5;
-    }
-
-    /**
-     * Build global transforms for all N images either sequentially or via maximum-inlier
-     * spanning tree, cascading through Perspective -> Similarity -> Translation.
-     */
-    function solveGlobalTransforms(features, autoOrder) {
-      const n = features.length;
-
-      function pickStepMatrix(match, mode) {
-        if (mode === 0) return match.H;
-        if (mode === 1) return match.safeH;
-        return match.transH;
-      }
-
-      function buildWithMode(mode) {
-        const globalH = new Array(n).fill(null);
-
-        if (!autoOrder) {
-          const anchorIdx = Math.floor(n / 2);
-          globalH[anchorIdx] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-
-          for (let i = anchorIdx + 1; i < n; i++) {
-            const match = matchFeaturePair(features[i], features[i - 1]);
-            if (!match) {
-              throw new Error(
-                `Could not align Photo #${i + 1} with Photo #${i}. Try enabling "Auto-detect overlap order" or verify they overlap.`
-              );
-            }
-            globalH[i] = matMul3x3(globalH[i - 1], pickStepMatrix(match, mode));
-          }
-
-          for (let i = anchorIdx - 1; i >= 0; i--) {
-            const match = matchFeaturePair(features[i], features[i + 1]);
-            if (!match) {
-              throw new Error(
-                `Could not align Photo #${i + 1} with Photo #${i + 2}. Try enabling "Auto-detect overlap order" or verify they overlap.`
-              );
-            }
-            globalH[i] = matMul3x3(globalH[i + 1], pickStepMatrix(match, mode));
-          }
-          return globalH;
-        }
-
-        const edges = [];
-        for (let i = 0; i < n; i++) {
-          for (let j = i + 1; j < n; j++) {
-            const forward = matchFeaturePair(features[j], features[i]);
-            if (forward) {
-              const stepH = pickStepMatrix(forward, mode);
-              const backwardH = invert3x3(stepH);
-              if (backwardH) {
-                edges.push({
-                  u: i,
-                  v: j,
-                  inliers: forward.inliers,
-                  H_v_to_u: stepH,
-                  H_u_to_v: backwardH
-                });
-              }
-            }
-          }
-        }
-
-        if (edges.length === 0) {
-          throw new Error(
-            'No overlapping features found between any of the uploaded photos. Ensure the images share 25–40% of the same scene.'
-          );
-        }
-
-        edges.sort((a, b) => b.inliers - a.inliers);
-
-        const nodeStrength = new Array(n).fill(0);
-        edges.forEach(e => {
-          nodeStrength[e.u] += e.inliers;
-          nodeStrength[e.v] += e.inliers;
-        });
-        let anchorIdx = 0;
-        for (let i = 1; i < n; i++) {
-          if (nodeStrength[i] > nodeStrength[anchorIdx]) anchorIdx = i;
-        }
-
-        const visited = new Set([anchorIdx]);
-        globalH[anchorIdx] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-
-        while (visited.size < n) {
-          let bestEdge = null;
-          for (const edge of edges) {
-            const uIn = visited.has(edge.u);
-            const vIn = visited.has(edge.v);
-            if (uIn !== vIn) {
-              bestEdge = edge;
-              break;
-            }
-          }
-
-          if (!bestEdge) {
-            const unlinked = [];
-            for (let i = 0; i < n; i++) {
-              if (!visited.has(i)) unlinked.push(`#${i + 1}`);
-            }
-            throw new Error(
-              `Photo ${unlinked.join(', ')} did not share enough overlap with the rest of the panorama.`
-            );
-          }
-
-          if (visited.has(bestEdge.u)) {
-            globalH[bestEdge.v] = matMul3x3(globalH[bestEdge.u], bestEdge.H_v_to_u);
-            visited.add(bestEdge.v);
-          } else {
-            globalH[bestEdge.u] = matMul3x3(globalH[bestEdge.v], bestEdge.H_u_to_v);
-            visited.add(bestEdge.u);
-          }
-        }
-
-        return globalH;
-      }
-
-      for (let mode = 0; mode <= 2; mode++) {
-        const candidateGlobal = buildWithMode(mode);
-        const allValid = candidateGlobal.every((H, idx) =>
-          H && isReasonableTransform(H, features[idx].width, features[idx].height)
-        );
-        if (allValid) {
-          return candidateGlobal;
-        }
-      }
-
-      return buildWithMode(2);
-    }
-
-    /**
-     * Find the largest axis-aligned rectangle completely inside the valid (alpha > 0) mask
-     * using the classic histogram largest-rectangle algorithm so exported panoramas have zero
-     * jagged checkerboard borders.
-     */
-    function findLargestInteriorRectangle(accW, outW, outH) {
-      const heights = new Int32Array(outW);
-      const stack = new Int32Array(outW + 1);
-      let bestArea = 0;
-      let bestRect = { x: 0, y: 0, w: outW, h: outH };
-
-      for (let y = 0; y < outH; y++) {
-        const row = y * outW;
-        for (let x = 0; x < outW; x++) {
-          heights[x] = accW[row + x] > 0 ? heights[x] + 1 : 0;
-        }
-
-        let top = -1;
-        for (let i = 0; i <= outW; i++) {
-          const currH = i === outW ? 0 : heights[i];
-          while (top >= 0 && currH < heights[stack[top]]) {
-            const h = heights[stack[top--]];
-            const left = top < 0 ? 0 : stack[top] + 1;
-            const w = i - left;
-            const area = w * h;
-            if (area > bestArea) {
-              bestArea = area;
-              bestRect = {
-                x: left,
-                y: y - h + 1,
-                w,
-                h
-              };
-            }
-          }
-          stack[++top] = i;
-        }
-      }
-
-      return bestArea > 0 ? bestRect : null;
-    }
-
-    /**
-     * Inverse-warp, exposure-match, and bilinearly feather-blend RGBA frames onto the panorama canvas
-     */
-    function blendWarpedFrames(frames, globalHomographies, autoCrop) {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-      frames.forEach((frame, i) => {
-        const H = globalHomographies[i];
-        const corners = [
-          projectPoint(H, 0, 0),
-          projectPoint(H, frame.width, 0),
-          projectPoint(H, frame.width, frame.height),
-          projectPoint(H, 0, frame.height)
-        ];
-        corners.forEach(pt => {
-          if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) {
-            throw new Error('Alignment projection diverged. Try reordering photos or toggling Auto-detect overlap order.');
-          }
-          if (pt.x < minX) minX = pt.x;
-          if (pt.y < minY) minY = pt.y;
-          if (pt.x > maxX) maxX = pt.x;
-          if (pt.y > maxY) maxY = pt.y;
-        });
-      });
-
-      let outW = Math.round(maxX - minX);
-      let outH = Math.round(maxY - minY);
-
-      if (!Number.isFinite(outW) || !Number.isFinite(outH) || outW <= 0 || outH <= 0) {
-        throw new Error('Could not compute valid panorama bounds. Ensure uploaded photos overlap.');
-      }
-
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const MAX_CANVAS_DIM = isMobile ? 3600 : 6000;
-      let postScale = 1.0;
-      if (outW > MAX_CANVAS_DIM || outH > MAX_CANVAS_DIM) {
-        postScale = MAX_CANVAS_DIM / Math.max(outW, outH);
-        outW = Math.round(outW * postScale);
-        outH = Math.round(outH * postScale);
-      }
-
-      const T = [
-        postScale, 0, -minX * postScale,
-        0, postScale, -minY * postScale,
-        0, 0, 1
-      ];
-
-      const totalPixels = outW * outH;
-      const accR = new Float32Array(totalPixels);
-      const accG = new Float32Array(totalPixels);
-      const accB = new Float32Array(totalPixels);
-      const accW = new Float32Array(totalPixels);
-
-      frames.forEach((frame, idx) => {
-        const finalH = matMul3x3(T, globalHomographies[idx]);
-        const invH = invert3x3(finalH);
-        if (!invH) return;
-
-        const w = frame.width;
-        const h = frame.height;
-        const src = frame.rgba;
-
-        // Compute tight destination bounding box for this frame to skip empty regions
-        const corners = [
-          projectPoint(finalH, 0, 0),
-          projectPoint(finalH, w, 0),
-          projectPoint(finalH, w, h),
-          projectPoint(finalH, 0, h)
-        ];
-        const bx0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c.x))));
-        const by0 = Math.max(0, Math.floor(Math.min(...corners.map(c => c.y))));
-        const bx1 = Math.min(outW - 1, Math.ceil(Math.max(...corners.map(c => c.x))));
-        const by1 = Math.min(outH - 1, Math.ceil(Math.max(...corners.map(c => c.y))));
-
-        const h0 = invH[0], h1 = invH[1], h2 = invH[2];
-        const h3 = invH[3], h4 = invH[4], h5 = invH[5];
-        const h6 = invH[6], h7 = invH[7], h8 = invH[8];
-
-        const halfW = w * 0.5;
-        const halfH = h * 0.5;
-
-        // First pass on overlap region to estimate exposure/white-balance gain relative to existing canvas
-        let ovSumSrcR = 0, ovSumSrcG = 0, ovSumSrcB = 0;
-        let ovSumDstR = 0, ovSumDstG = 0, ovSumDstB = 0;
-        let ovSamples = 0;
-
-        if (idx > 0) {
-          for (let dy = by0; dy <= by1; dy += 3) {
-            let numX = h1 * dy + h2 + h0 * bx0;
-            let numY = h4 * dy + h5 + h3 * bx0;
-            let denW = h7 * dy + h8 + h6 * bx0;
-            const rowOut = dy * outW;
-
-            for (let dx = bx0; dx <= bx1; dx += 3) {
-              const p = rowOut + dx;
-              const existingW = accW[p];
-              if (existingW > 0 && denW > 1e-5) {
-                const sx = numX / denW;
-                const sy = numY / denW;
-                if (sx >= 1 && sx < w - 2 && sy >= 1 && sy < h - 2) {
-                  const i00 = ((sy | 0) * w + (sx | 0)) * 4;
-                  const sr = src[i00], sg = src[i00 + 1], sb = src[i00 + 2];
-                  const dr = accR[p] / existingW, dg = accG[p] / existingW, db = accB[p] / existingW;
-                  // Ignore clipped highlights (sun glare) and deep shadows for stable gain
-                  if (sr > 20 && sr < 240 && dr > 20 && dr < 240) {
-                    ovSumSrcR += sr; ovSumSrcG += sg; ovSumSrcB += sb;
-                    ovSumDstR += dr; ovSumDstG += dg; ovSumDstB += db;
-                    ovSamples++;
-                  }
-                }
-              }
-              numX += h0 * 3;
-              numY += h3 * 3;
-              denW += h6 * 3;
-            }
-          }
-        }
-
-        const clampGain = (g) => Math.max(0.82, Math.min(1.22, g));
-        const gainR = ovSamples > 40 ? clampGain(ovSumDstR / Math.max(1, ovSumSrcR)) : 1.0;
-        const gainG = ovSamples > 40 ? clampGain(ovSumDstG / Math.max(1, ovSumSrcG)) : 1.0;
-        const gainB = ovSamples > 40 ? clampGain(ovSumDstB / Math.max(1, ovSumSrcB)) : 1.0;
-
-        for (let dy = by0; dy <= by1; dy++) {
-          let numX = h1 * dy + h2 + h0 * bx0;
-          let numY = h4 * dy + h5 + h3 * bx0;
-          let denW = h7 * dy + h8 + h6 * bx0;
-          const rowOut = dy * outW;
-
-          for (let dx = bx0; dx <= bx1; dx++) {
-            if (denW > 1e-5) {
-              const sx = numX / denW;
-              const sy = numY / denW;
-
-              if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
-                const x0 = sx | 0;
-                const y0 = sy | 0;
-                const fx = sx - x0;
-                const fy = sy - y0;
-                const fx1 = 1 - fx;
-                const fy1 = 1 - fy;
-
-                const w00 = fx1 * fy1;
-                const w10 = fx * fy1;
-                const w01 = fx1 * fy;
-                const w11 = fx * fy;
-
-                const i00 = (y0 * w + x0) * 4;
-                const i10 = i00 + 4;
-                const i01 = i00 + w * 4;
-                const i11 = i01 + 4;
-
-                const r = Math.min(255, (src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11) * gainR);
-                const g = Math.min(255, (src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11) * gainG);
-                const b = Math.min(255, (src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11) * gainB);
-
-                // Smooth quadratic edge feather weight so overlapping seams blend seamlessly
-                const wx = Math.min(sx + 1, w - sx) / halfW;
-                const wy = Math.min(sy + 1, h - sy) / halfH;
-                const e = Math.min(1, wx) * Math.min(1, wy);
-                const weight = Math.max(0.0005, e * e);
-
-                const p = rowOut + dx;
-                accR[p] += r * weight;
-                accG[p] += g * weight;
-                accB[p] += b * weight;
-                accW[p] += weight;
-              }
-            }
-            numX += h0;
-            numY += h3;
-            denW += h6;
-          }
-        }
-      });
-
-      const outRGBA = new Uint8ClampedArray(totalPixels * 4);
-      for (let p = 0; p < totalPixels; p++) {
-        const w = accW[p];
-        if (w > 0) {
-          outRGBA[p * 4 + 0] = Math.round(accR[p] / w);
-          outRGBA[p * 4 + 1] = Math.round(accG[p] / w);
-          outRGBA[p * 4 + 2] = Math.round(accB[p] / w);
-          outRGBA[p * 4 + 3] = 255;
-        } else {
-          outRGBA[p * 4 + 3] = 0;
-        }
-      }
-
-      let cropX = 0, cropY = 0, cropW = outW, cropH = outH;
-      if (autoCrop) {
-        const innerRect = findLargestInteriorRectangle(accW, outW, outH);
-        if (innerRect && innerRect.w > 20 && innerRect.h > 20) {
-          cropX = innerRect.x;
-          cropY = innerRect.y;
-          cropW = innerRect.w;
-          cropH = innerRect.h;
-        }
-      }
-
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = outW;
-      tempCanvas.height = outH;
-      const tempCtx = tempCanvas.getContext('2d');
-      tempCtx.putImageData(new ImageData(outRGBA, outW, outH), 0, 0);
-
-      el.outputCanvas.width = cropW;
-      el.outputCanvas.height = cropH;
-      const outCtx = el.outputCanvas.getContext('2d');
-      outCtx.clearRect(0, 0, cropW, cropH);
-      outCtx.drawImage(tempCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-      return { width: cropW, height: cropH };
-    }
-
-    /**
-     * Main Stitch Execution Handler
-     */
-    el.stitchBtn.addEventListener('click', async () => {
-      if (!state.cvReady || state.images.length < MIN_IMAGES || state.isProcessing) return;
-
-      state.isProcessing = true;
-      updateUI();
-      el.processingOverlay.classList.remove('hidden');
-      el.processingTitle.textContent = 'Preparing & Scaling Images...';
-
-      await new Promise(r => setTimeout(r, 40));
-
-      const frames = [];
-      const features = [];
       try {
-        const maxDim = Number(el.resolutionSelect.value) || 1400;
-        const detectorType = el.detectorSelect.value || 'ORB';
-        const autoCrop = el.autoCropCheckbox.checked;
-        const autoOrder = el.autoOrderCheckbox.checked;
+        const direction = directionSelect.value;
+        const maxOverlapRatio = Number(searchRangeInput.value) / 100;
+        const featherPx = Number(featherWidthInput.value);
+        const cropMode = cropModeSelect.value;
 
-        for (let i = 0; i < state.images.length; i++) {
-          el.processingTitle.textContent = `Extracting Features (${i + 1}/${state.images.length})...`;
-          await new Promise(r => setTimeout(r, 15));
-          const frame = imageToResizedFrame(state.images[i].imgElement, maxDim);
-          frames.push(frame);
-          features.push(extractImageFeatures(frame, detectorType));
+        // Normalize cross-axis dimensions to match the first photo for clean alignment
+        const basePhoto = state.photos[0];
+        const normalized = state.photos.map((p, idx) => {
+          if (idx === 0) {
+            return { canvas: p.canvas, width: p.width, height: p.height };
+          }
+          const scale = direction === 'horizontal'
+            ? basePhoto.height / p.height
+            : basePhoto.width / p.width;
+
+          if (Math.abs(scale - 1) < 0.01) {
+            return { canvas: p.canvas, width: p.width, height: p.height };
+          }
+
+          const nw = Math.round(p.width * scale);
+          const nh = Math.round(p.height * scale);
+          const c = document.createElement('canvas');
+          c.width = nw;
+          c.height = nh;
+          c.getContext('2d').drawImage(p.canvas, 0, 0, nw, nh);
+          return { canvas: c, width: nw, height: nh };
+        });
+
+        // Compute global placement coordinates for each image
+        const placements = [{ x: 0, y: 0, img: normalized[0] }];
+        for (let i = 1; i < normalized.length; i++) {
+          setStatus(`Aligning photo ${i + 1} of ${normalized.length}...`);
+          await new Promise((r) => setTimeout(r, 15));
+
+          const prev = placements[i - 1];
+          const curr = normalized[i];
+          const { dx, dy } = findPairOffset(prev.img.canvas, curr.canvas, direction, maxOverlapRatio);
+          placements.push({
+            x: prev.x + dx,
+            y: prev.y + dy,
+            img: curr
+          });
         }
 
-        const n = frames.length;
-        el.processingTitle.textContent = autoOrder
-          ? 'Finding Best Overlap Graph & Aligning Frames...'
-          : 'Aligning Frames in Sequence...';
-        await new Promise(r => setTimeout(r, 20));
+        // Compute bounding box
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of placements) {
+          minX = Math.min(minX, p.x);
+          minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x + p.img.width);
+          maxY = Math.max(maxY, p.y + p.img.height);
+        }
 
-        const globalH = solveGlobalTransforms(features, autoOrder);
+        // Shift all coordinates so top-left starts at (0, 0)
+        for (const p of placements) {
+          p.x -= minX;
+          p.y -= minY;
+        }
 
-        el.processingTitle.textContent = 'Warping & Feather-Blending Panorama...';
-        await new Promise(r => setTimeout(r, 20));
+        const totalW = Math.max(1, Math.round(maxX - minX));
+        const totalH = Math.max(1, Math.round(maxY - minY));
 
-        const startTime = performance.now();
-        const finalSize = blendWarpedFrames(frames, globalH, autoCrop);
-        const elapsedSec = ((performance.now() - startTime) / 1000).toFixed(2);
+        setStatus('Blending seams...');
+        await new Promise((r) => setTimeout(r, 15));
 
-        state.lastPanoramaReady = true;
-        el.emptyResultPlaceholder.classList.add('hidden');
-        el.outputCanvas.classList.remove('hidden');
-        el.exportControls.classList.remove('hidden');
-        el.resultMeta.textContent = `Stitched ${n} photos into ${finalSize.width} × ${finalSize.height} px panorama (${elapsedSec}s blend).`;
+        const fullCanvas = document.createElement('canvas');
+        fullCanvas.width = totalW;
+        fullCanvas.height = totalH;
+        const fullCtx = fullCanvas.getContext('2d');
 
-        showToast('Panorama stitched successfully!', 'success');
+        // Draw first image directly
+        fullCtx.drawImage(placements[0].img.canvas, placements[0].x, placements[0].y);
+
+        // Draw each subsequent image with feathered leading edge
+        for (let i = 1; i < placements.length; i++) {
+          const p = placements[i];
+          const w = p.img.width;
+          const h = p.img.height;
+
+          const layer = document.createElement('canvas');
+          layer.width = w;
+          layer.height = h;
+          const lCtx = layer.getContext('2d');
+          lCtx.drawImage(p.img.canvas, 0, 0);
+
+          if (featherPx > 0) {
+            const ramp = Math.min(featherPx, direction === 'horizontal' ? Math.floor(w * 0.45) : Math.floor(h * 0.45));
+            if (ramp > 1) {
+              lCtx.globalCompositeOperation = 'destination-in';
+              const grad = direction === 'horizontal'
+                ? lCtx.createLinearGradient(0, 0, ramp, 0)
+                : lCtx.createLinearGradient(0, 0, 0, ramp);
+              grad.addColorStop(0, 'rgba(0,0,0,0)');
+              grad.addColorStop(1, 'rgba(0,0,0,1)');
+              lCtx.fillStyle = grad;
+              lCtx.fillRect(0, 0, w, h);
+              lCtx.globalCompositeOperation = 'source-over';
+            }
+          }
+
+          fullCtx.drawImage(layer, p.x, p.y);
+        }
+
+        // Optional auto-crop to remove jagged vertical/horizontal drift borders
+        let finalCanvas = fullCanvas;
+        if (cropMode === 'crop') {
+          let cropLeft = 0;
+          let cropTop = 0;
+          let cropRight = totalW;
+          let cropBottom = totalH;
+
+          if (direction === 'horizontal') {
+            cropTop = Math.max(0, ...placements.map((p) => p.y));
+            cropBottom = Math.min(totalH, ...placements.map((p) => p.y + p.img.height));
+          } else {
+            cropLeft = Math.max(0, ...placements.map((p) => p.x));
+            cropRight = Math.min(totalW, ...placements.map((p) => p.x + p.img.width));
+          }
+
+          const cw = cropRight - cropLeft;
+          const ch = cropBottom - cropTop;
+          if (cw > 20 && ch > 20) {
+            const cropped = document.createElement('canvas');
+            cropped.width = cw;
+            cropped.height = ch;
+            cropped.getContext('2d').drawImage(fullCanvas, cropLeft, cropTop, cw, ch, 0, 0, cw, ch);
+            finalCanvas = cropped;
+          }
+        }
+
+        // Render into visible output canvas
+        outputCanvas.width = finalCanvas.width;
+        outputCanvas.height = finalCanvas.height;
+        outputCanvas.getContext('2d').drawImage(finalCanvas, 0, 0);
+
+        outputCanvas.style.display = 'block';
+        emptyPreviewMsg.style.display = 'none';
+        outputDimsPill.textContent = `${finalCanvas.width} × ${finalCanvas.height} px`;
+
+        state.hasResult = true;
+        downloadBtn.disabled = false;
+        setStatus(`Stitched ${state.photos.length} photos (${finalCanvas.width} × ${finalCanvas.height} px)!`, 'success');
       } catch (err) {
         console.error(err);
-        showToast(err.message || 'Stitching failed. Try reordering photos or using overlapping frames.', 'error');
+        setStatus(`Stitching failed: ${err.message || 'Unknown error'}`, 'error');
       } finally {
-        state.isProcessing = false;
-        el.processingOverlay.classList.add('hidden');
-        updateUI();
+        stitchBtn.disabled = state.photos.length < 2;
       }
-    });
+    }
 
-    /**
-     * 1-Click Download Stitched Panorama (JPG / PNG)
-     */
-    el.downloadPanoramaBtn.addEventListener('click', () => {
-      if (!state.lastPanoramaReady) return;
-      const mime = el.exportFormatSelect.value;
-      const ext = mime === 'image/png' ? 'png' : 'jpg';
-      const quality = mime === 'image/jpeg' ? 0.94 : undefined;
+    stitchBtn.addEventListener('click', stitchPanorama);
 
-      el.outputCanvas.toBlob((blob) => {
-        if (!blob) {
-          showToast('Unable to export panorama image.', 'error');
-          return;
-        }
+    // Download stitched result as PNG
+    downloadBtn.addEventListener('click', () => {
+      if (!state.hasResult) return;
+      outputCanvas.toBlob((blob) => {
+        if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `panorama-${Date.now()}.${ext}`;
-        a.rel = 'noopener';
+        a.download = `panorama-${Date.now()}.png`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-        showToast(`Downloaded panorama.${ext}`, 'success');
-      }, mime, quality);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }, 'image/png');
     });
 
-    /**
-     * Download Standalone App (.html) so the user can save and run it locally
-     */
-    el.downloadAppBtn.addEventListener('click', () => {
-      const docClone = document.documentElement.cloneNode(true);
-      const clonedGrid = docClone.querySelector('#previewGrid');
-      if (clonedGrid) clonedGrid.innerHTML = '';
-      const clonedToasts = docClone.querySelector('#toastContainer');
-      if (clonedToasts) clonedToasts.innerHTML = '';
-      const clonedCanvas = docClone.querySelector('#outputCanvas');
-      if (clonedCanvas) clonedCanvas.classList.add('hidden');
-      const clonedEmpty = docClone.querySelector('#emptyResultPlaceholder');
-      if (clonedEmpty) clonedEmpty.classList.remove('hidden');
-      const clonedExport = docClone.querySelector('#exportControls');
-      if (clonedExport) clonedExport.classList.add('hidden');
-
-      const htmlContent = '<!DOCTYPE html>\n' + docClone.outerHTML;
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'panorama-stitcher.html';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('Saved standalone app as panorama-stitcher.html', 'success');
-    });
-
-    // Register an inline Service Worker when hosted over http(s) so the app caches for offline use
+    // Register real Service Worker file (./sw.js) when hosted over http(s) so iOS Safari caches it offline
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
-      const swCode = `
-        const CACHE_NAME = 'panorama-studio-v1';
-        self.addEventListener('install', (event) => {
-          event.waitUntil(
-            caches.open(CACHE_NAME).then((cache) => cache.addAll([self.registration.scope]))
-          );
-          self.skipWaiting();
-        });
-        self.addEventListener('activate', (event) => {
-          event.waitUntil(self.clients.claim());
-        });
-        self.addEventListener('fetch', (event) => {
-          if (event.request.method !== 'GET') return;
-          event.respondWith(
-            caches.match(event.request).then((cached) => cached || fetch(event.request).catch(() => caches.match(self.registration.scope)))
-          );
-        });
-      `;
-      const swBlob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(() => setTimeout(() => URL.revokeObjectURL(swUrl), 5000))
-        .catch(() => {});
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+      });
     }
 
     // Initialize initial UI state immediately
