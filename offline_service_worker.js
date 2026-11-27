@@ -1,4 +1,4 @@
-const CACHE_NAME = 'panorama-studio-offline-v11';
+const CACHE_NAME = 'panorama-studio-offline-v12';
 const PRECACHE_URLS = ['./', './index.html', './sw.js'];
 
 self.addEventListener('install', (event) => {
