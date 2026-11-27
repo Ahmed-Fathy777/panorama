@@ -2,1176 +2,536 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Panorama Studio" />
-  <title>Panorama Studio — Client-Side Image Stitcher</title>
+  <meta name="apple-mobile-web-app-title" content="Panorama Stitcher" />
+  <meta name="theme-color" content="#0b1120" />
+  <title>5-Photo Panorama Stitcher</title>
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-alt: #0b1120;
-      --border: #334155;
-      --border-hover: #64748b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #38bdf8;
-      --primary-hover: #0ea5e9;
-      --primary-text: #0f172a;
-      --accent: #818cf8;
-      --danger: #f43f5e;
-      --danger-bg: rgba(244, 63, 94, 0.14);
-      --success: #34d399;
-      --radius: 14px;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
+    *, *::before, *::after { box-sizing: border-box; }
     body {
-      font-family: var(--font);
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .app-shell {
-      max-width: 1120px;
-      margin: 0 auto;
+      margin: 0;
       padding: 20px 16px 48px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b1120;
+      color: #f8fafc;
+      line-height: 1.5;
     }
-
-    header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      display: grid;
-      place-items: center;
-      color: var(--primary-text);
-      font-weight: 800;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .brand h1 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-
-    .brand p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: rgba(56, 189, 248, 0.14);
-      color: var(--primary);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-
-    .banner-warning {
-      display: none;
-      padding: 14px 16px;
-      border-radius: var(--radius);
-      background: rgba(245, 158, 11, 0.14);
-      border: 1px solid rgba(245, 158, 11, 0.45);
-      color: #fde68a;
-      font-size: 0.88rem;
-    }
-
-    .banner-warning.visible {
-      display: block;
-    }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+    .container { max-width: 980px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin: 0 0 6px; }
+    p.sub { color: #94a3b8; font-size: 0.9rem; margin: 0 0 18px; }
+    .upload-box {
+      background: #111827;
+      border: 2px dashed #334155;
+      border-radius: 14px;
       padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .panel-header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .panel-title {
-      font-size: 1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .count-pill {
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 2px 9px;
-      border-radius: 999px;
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      color: var(--primary);
-    }
-
-    .dropzone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      background: var(--surface-alt);
-      padding: 24px 16px;
       text-align: center;
-      transition: border-color 0.2s, background-color 0.2s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .dropzone.dragover {
-      border-color: var(--primary);
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    .dropzone p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      max-width: 480px;
-    }
-
-    .picker-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .btn {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      padding: 11px 16px;
-      border-radius: 10px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: transform 0.1s, background-color 0.15s, border-color 0.15s;
-      touch-action: manipulation;
-      user-select: none;
+      margin-bottom: 16px;
     }
-
-    .btn:hover:not(:disabled) {
-      border-color: var(--border-hover);
-      background: #273549;
-    }
-
-    .btn:active:not(:disabled) {
-      transform: scale(0.98);
-    }
-
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: var(--primary-text);
-      border-color: var(--primary);
-      font-weight: 700;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
-    }
-
-    .btn-danger {
-      color: var(--danger);
-      border-color: rgba(244, 63, 94, 0.35);
-      background: var(--danger-bg);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: rgba(244, 63, 94, 0.24);
-      border-color: var(--danger);
-    }
-
-    .btn-sm {
-      padding: 6px 10px;
-      font-size: 0.78rem;
-      border-radius: 8px;
-    }
-
-    /* Visually hidden file inputs triggered cleanly via labels */
-    .sr-file-input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .thumb-grid {
+    .upload-box:hover { border-color: #38bdf8; }
+    .slots {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
       gap: 12px;
+      margin-bottom: 16px;
     }
-
-    .thumb-card {
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
+    .slot {
+      background: #111827;
+      border: 1px solid #334155;
       border-radius: 12px;
-      overflow: hidden;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-    }
-
-    .thumb-img-wrap {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      background: #020617;
-      overflow: hidden;
-    }
-
-    .thumb-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .thumb-index {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      background: rgba(15, 23, 42, 0.85);
-      color: var(--primary);
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-    }
-
-    .thumb-meta {
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .thumb-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .thumb-dims {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-
-    .thumb-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       gap: 6px;
     }
-
-    .controls-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
-    }
-
-    .control-group {
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .control-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
+    .slot-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .control-label span {
-      color: var(--primary);
+      font-size: 0.8rem;
       font-weight: 700;
+      color: #38bdf8;
     }
-
-    select, input[type="range"] {
+    .slot img {
       width: 100%;
-      accent-color: var(--primary);
-    }
-
-    select {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
       border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.86rem;
-      font-family: inherit;
+      background: #090d16;
     }
-
-    .status-bar {
+    .slot-btns {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .mini-btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      flex: 1;
+    }
+    .mini-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .actions {
       display: flex;
       flex-wrap: wrap;
+      gap: 10px;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      font-size: 0.85rem;
+      margin-bottom: 16px;
     }
-
-    .status-text {
-      color: var(--text-muted);
-    }
-
-    .status-text.error {
-      color: var(--danger);
+    button.primary, a.btn {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 18px;
+      font-size: 0.95rem;
       font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
     }
-
-    .status-text.success {
-      color: var(--success);
+    button.secondary {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-size: 0.9rem;
       font-weight: 600;
+      cursor: pointer;
     }
-
-    .canvas-viewport {
-      width: 100%;
-      min-height: 240px;
-      max-height: 68vh;
-      overflow: auto;
-      background:
-        linear-gradient(45deg, #0b1120 25%, transparent 25%),
-        linear-gradient(-45deg, #0b1120 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #0b1120 75%),
-        linear-gradient(-45deg, transparent 75%, #0b1120 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-      background-color: #131c31;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      padding: 12px;
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .status {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
     }
-
-    #outputCanvas {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    .output-box {
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      overflow: hidden;
       display: none;
     }
-
-    .empty-preview {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      padding: 24px;
-    }
-
-    @media (max-width: 600px) {
-      .app-shell {
-        padding: 12px 10px 36px;
-      }
-      .panel {
-        padding: 14px;
-      }
-      .thumb-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
+    .output-box.visible { display: block; }
+    canvas { display: block; width: 100%; height: auto; }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- App Header -->
-    <header>
-      <div class="brand">
-        <div class="brand-icon">P</div>
-        <div>
-          <h1>Panorama Studio</h1>
-          <p>100% On-Device Client-Side Image Stitcher (Up to 5 Photos)</p>
-        </div>
-      </div>
-      <span class="badge" id="offlineBadge">Offline Ready</span>
-    </header>
+  <div class="container">
+    <h1>5-Photo Panorama Stitcher</h1>
+    <p class="sub">Select 2 to 5 overlapping photos. Use the arrows to order them Left → Right (or Reverse Order), then tap Stitch.</p>
 
-    <!-- Warning banner shown only if opened via file:// (e.g., iOS Files QuickLook) -->
-    <div id="fileProtocolBanner" class="banner-warning">
-      <strong>iPhone Files App Notice:</strong> You opened this file directly from local storage (<code>file://</code>). iOS blocks local HTML files from reading your Photo Library. Open this app via your <strong>https://</strong> link in Safari and tap <strong>Share &rarr; Add to Home Screen</strong> for full offline photo access.
+    <label class="upload-box" for="fileInput">
+      <div><strong>Tap to Select 2–5 Photos</strong></div>
+      <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">Supports JPEG, PNG, HEIC from your phone or laptop</div>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden />
+    </label>
+
+    <div class="slots" id="slotsContainer"></div>
+
+    <div class="actions">
+      <button id="stitchBtn" class="primary" disabled>Stitch Photos</button>
+      <button id="reverseBtn" class="secondary" disabled>Reverse Order</button>
+      <button id="clearBtn" class="secondary" disabled>Clear All</button>
+      <a id="saveBtn" class="btn" style="display:none;" download="stitched-panorama.jpg">Save Stitched Image</a>
     </div>
 
-    <!-- Step 1: Photo Upload & Ordering -->
-    <section class="panel" aria-label="Source Photos">
-      <div class="panel-header">
-        <div class="panel-title">
-          1. Select &amp; Order Photos
-          <span class="count-pill" id="photoCountPill">0 / 5</span>
-        </div>
-        <button type="button" class="btn btn-danger btn-sm" id="clearAllBtn" disabled>
-          Clear All
-        </button>
-      </div>
+    <div class="status" id="status">Select 2 to 5 overlapping photos above to begin.</div>
 
-      <div class="dropzone" id="dropZone">
-        <p>
-          Add <strong>2 to 5 overlapping photos</strong> in order (left-to-right or top-to-bottom).
-          All stitching runs locally on your device—no photos ever leave your browser.
-        </p>
-
-        <div class="picker-actions">
-          <!-- Multi-photo file input -->
-          <label class="btn btn-primary" for="multiPhotoInput" id="multiPickerLabel">
-            + Choose Photos (Up to 5)
-          </label>
-          <input
-            type="file"
-            id="multiPhotoInput"
-            class="sr-file-input"
-            accept="image/*"
-            multiple
-          />
-
-          <!-- Single-photo fallback input for mobile browsers -->
-          <label class="btn" for="singlePhotoInput" id="singlePickerLabel">
-            + Add 1 Photo at a Time
-          </label>
-          <input
-            type="file"
-            id="singlePhotoInput"
-            class="sr-file-input"
-            accept="image/*"
-          />
-        </div>
-      </div>
-
-      <div class="thumb-grid" id="thumbGrid"></div>
-    </section>
-
-    <!-- Step 2: Alignment & Blending Settings -->
-    <section class="panel" aria-label="Stitching Settings">
-      <div class="panel-header">
-        <div class="panel-title">2. Alignment &amp; Blending Controls</div>
-      </div>
-
-      <div class="controls-grid">
-        <div class="control-group">
-          <label class="control-label" for="directionSelect">
-            Stitch Direction
-          </label>
-          <select id="directionSelect">
-            <option value="horizontal" selected>Horizontal (Left &rarr; Right)</option>
-            <option value="vertical">Vertical (Top &rarr; Bottom)</option>
-          </select>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="searchRangeInput">
-            Max Overlap Search <span id="searchRangeVal">45%</span>
-          </label>
-          <input type="range" id="searchRangeInput" min="15" max="75" value="45" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="featherWidthInput">
-            Seam Feather Blend <span id="featherWidthVal">60 px</span>
-          </label>
-          <input type="range" id="featherWidthInput" min="0" max="200" value="60" />
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="cropModeSelect">
-            Edge Framing
-          </label>
-          <select id="cropModeSelect">
-            <option value="crop" selected>Auto-Crop Uneven Borders</option>
-            <option value="full">Keep Full Uncropped Canvas</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="status-bar">
-        <span class="status-text" id="statusText">Add at least 2 overlapping photos to begin.</span>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-primary" id="stitchBtn" disabled>
-            Stitch Panorama
-          </button>
-          <button type="button" class="btn" id="downloadBtn" disabled>
-            Download PNG
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 3: Output Preview -->
-    <section class="panel" aria-label="Stitched Panorama Result">
-      <div class="panel-header">
-        <div class="panel-title">
-          3. Panorama Result
-          <span class="count-pill" id="outputDimsPill">Not rendered</span>
-        </div>
-      </div>
-
-      <div class="canvas-viewport">
-        <div class="empty-preview" id="emptyPreviewMsg">
-          Your stitched panorama will appear here once processed.
-        </div>
-        <canvas id="outputCanvas"></canvas>
-      </div>
-    </section>
+    <div class="output-box" id="outputBox">
+      <canvas id="outCanvas"></canvas>
+    </div>
   </div>
 
   <script>
-    /**
-     * Panorama Studio — Pure Client-Side Image Stitcher
-     * Uses normalized grayscale SAD template matching with coarse-to-fine search
-     * and linear alpha-feathered compositing across up to 5 images.
-     */
     const MAX_PHOTOS = 5;
-    const MAX_WORKING_DIM = 1800; // Prevents mobile Safari memory crashes on 48MP photos
-
-    // Application state
-    const state = {
-      photos: [], // Array of { id, name, width, height, canvas }
-      hasResult: false
-    };
-
-    // DOM Elements
-    const fileProtocolBanner = document.getElementById('fileProtocolBanner');
-    const photoCountPill = document.getElementById('photoCountPill');
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    const dropZone = document.getElementById('dropZone');
-    const multiPhotoInput = document.getElementById('multiPhotoInput');
-    const singlePhotoInput = document.getElementById('singlePhotoInput');
-    const thumbGrid = document.getElementById('thumbGrid');
-
-    const directionSelect = document.getElementById('directionSelect');
-    const searchRangeInput = document.getElementById('searchRangeInput');
-    const searchRangeVal = document.getElementById('searchRangeVal');
-    const featherWidthInput = document.getElementById('featherWidthInput');
-    const featherWidthVal = document.getElementById('featherWidthVal');
-    const cropModeSelect = document.getElementById('cropModeSelect');
-
-    const statusText = document.getElementById('statusText');
+    const fileInput = document.getElementById('fileInput');
+    const slotsContainer = document.getElementById('slotsContainer');
     const stitchBtn = document.getElementById('stitchBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const outputDimsPill = document.getElementById('outputDimsPill');
-    const emptyPreviewMsg = document.getElementById('emptyPreviewMsg');
-    const outputCanvas = document.getElementById('outputCanvas');
+    const reverseBtn = document.getElementById('reverseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const statusEl = document.getElementById('status');
+    const outputBox = document.getElementById('outputBox');
+    const outCanvas = document.getElementById('outCanvas');
 
-    // Detect restricted local file:// execution (e.g., iOS QuickLook)
-    if (window.location.protocol === 'file:') {
-      fileProtocolBanner.classList.add('visible');
-    }
+    let photos = []; // Array of { img, url, name }
 
-    // Range slider UI bindings
-    searchRangeInput.addEventListener('input', () => {
-      searchRangeVal.textContent = `${searchRangeInput.value}%`;
-    });
-
-    featherWidthInput.addEventListener('input', () => {
-      featherWidthVal.textContent = `${featherWidthInput.value} px`;
-    });
-
-    function setStatus(message, type = 'normal') {
-      statusText.textContent = message;
-      statusText.className = 'status-text';
-      if (type === 'error') statusText.classList.add('error');
-      if (type === 'success') statusText.classList.add('success');
-    }
-
-    /**
-     * Decodes a File object into a downscaled HTMLCanvasElement safely on mobile & desktop.
-     */
-    function decodeAndScaleFile(file) {
+    function loadImg(file) {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
-        reader.onload = () => {
-          const img = new Image();
-          img.onerror = () => reject(new Error(`Unsupported image format: ${file.name}`));
-          img.onload = () => {
-            try {
-              let w = img.naturalWidth || img.width;
-              let h = img.naturalHeight || img.height;
-              if (!w || !h) {
-                reject(new Error(`Invalid dimensions for ${file.name}`));
-                return;
-              }
-
-              // Downscale large camera photos so mobile memory stays well within limits
-              const scale = Math.min(1, MAX_WORKING_DIM / Math.max(w, h));
-              const targetW = Math.max(1, Math.round(w * scale));
-              const targetH = Math.max(1, Math.round(h * scale));
-
-              const c = document.createElement('canvas');
-              c.width = targetW;
-              c.height = targetH;
-              const ctx = c.getContext('2d', { willReadFrequently: true });
-              ctx.drawImage(img, 0, 0, targetW, targetH);
-
-              resolve({
-                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                name: file.name || `Photo ${state.photos.length + 1}`,
-                width: targetW,
-                height: targetH,
-                canvas: c,
-                thumbUrl: c.toDataURL('image/jpeg', 0.72)
-              });
-            } catch (err) {
-              reject(err);
-            }
-          };
-          img.src = reader.result;
-        };
-        reader.readAsDataURL(file);
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => resolve({ img, url, name: file.name });
+        img.onerror = reject;
+        img.src = url;
       });
     }
 
-    /**
-     * Processes an array of File objects and appends them up to MAX_PHOTOS.
-     */
-    async function handleFiles(fileArray) {
-      if (!fileArray || fileArray.length === 0) return;
-
-      const remainingSlots = MAX_PHOTOS - state.photos.length;
-      if (remainingSlots <= 0) {
-        setStatus(`Maximum of ${MAX_PHOTOS} photos already added. Remove one to add another.`, 'error');
-        return;
-      }
-
-      const validFiles = fileArray
-        .filter((f) => f && (f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name)))
-        .slice(0, remainingSlots);
-
-      if (validFiles.length === 0) {
-        setStatus('No supported image files were detected.', 'error');
-        return;
-      }
-
-      setStatus(`Loading ${validFiles.length} photo(s)...`);
-
-      let addedCount = 0;
-      for (const file of validFiles) {
-        try {
-          const item = await decodeAndScaleFile(file);
-          state.photos.push(item);
-          addedCount++;
-          updateUI();
-        } catch (err) {
-          console.error(err);
-          setStatus(err.message || 'Failed to decode one of the selected photos.', 'error');
-        }
-      }
-
-      if (addedCount > 0) {
-        if (state.photos.length >= 2) {
-          setStatus(`Ready! ${state.photos.length} photos loaded. Click "Stitch Panorama".`, 'success');
-        } else {
-          setStatus('1 photo loaded. Add at least 1 more overlapping photo.');
-        }
-      }
-    }
-
-    // Synchronous snapshot of FileList on change (prevents iOS WebKit FileList invalidation)
-    function onFileInputChange(event) {
-      const files = event.target && event.target.files ? Array.from(event.target.files) : [];
-      if (files.length > 0) {
-        handleFiles(files);
-      }
-    }
-
-    multiPhotoInput.addEventListener('change', onFileInputChange);
-    singlePhotoInput.addEventListener('change', onFileInputChange);
-
-    // Drag & drop support for desktop browsers
-    ['dragenter', 'dragover'].forEach((evtName) => {
-      dropZone.addEventListener(evtName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.add('dragover');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach((evtName) => {
-      dropZone.addEventListener(evtName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove('dragover');
-      });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      const files = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
-      handleFiles(files);
-    });
-
-    // Queue management actions
-    function movePhoto(index, delta) {
-      const target = index + delta;
-      if (target < 0 || target >= state.photos.length) return;
-      const temp = state.photos[index];
-      state.photos[index] = state.photos[target];
-      state.photos[target] = temp;
-      updateUI();
-    }
-
-    function removePhoto(index) {
-      state.photos.splice(index, 1);
-      updateUI();
-      if (state.photos.length < 2) {
-        setStatus('Add at least 2 overlapping photos to begin.');
-      }
-    }
-
-    clearAllBtn.addEventListener('click', () => {
-      state.photos = [];
-      state.hasResult = false;
-      outputCanvas.style.display = 'none';
-      emptyPreviewMsg.style.display = 'block';
-      outputDimsPill.textContent = 'Not rendered';
-      downloadBtn.disabled = true;
-      updateUI();
-      setStatus('Cleared all photos. Add 2 to 5 overlapping photos to begin.');
-    });
-
-    /**
-     * Renders the thumbnail list and updates button states.
-     */
-    function updateUI() {
-      const count = state.photos.length;
-      photoCountPill.textContent = `${count} / ${MAX_PHOTOS}`;
-      clearAllBtn.disabled = count === 0;
-      stitchBtn.disabled = count < 2;
-
-      thumbGrid.innerHTML = '';
-      state.photos.forEach((photo, idx) => {
+    function renderSlots() {
+      slotsContainer.innerHTML = '';
+      photos.forEach((p, idx) => {
         const card = document.createElement('div');
-        card.className = 'thumb-card';
+        card.className = 'slot';
 
-        card.innerHTML = `
-          <div class="thumb-img-wrap">
-            <img src="${photo.thumbUrl}" alt="Photo ${idx + 1}" />
-            <span class="thumb-index">#${idx + 1}</span>
-          </div>
-          <div class="thumb-meta">
-            <div class="thumb-name" title="${photo.name}">${photo.name}</div>
-            <div class="thumb-dims">${photo.width} &times; ${photo.height} px</div>
-            <div class="thumb-controls">
-              <div style="display:flex; gap:4px;">
-                <button type="button" class="btn btn-sm" data-action="left" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move Earlier">&larr;</button>
-                <button type="button" class="btn btn-sm" data-action="right" data-idx="${idx}" ${idx === count - 1 ? 'disabled' : ''} title="Move Later">&rarr;</button>
-              </div>
-              <button type="button" class="btn btn-danger btn-sm" data-action="remove" data-idx="${idx}" title="Remove">Remove</button>
-            </div>
-          </div>
-        `;
-        thumbGrid.appendChild(card);
+        const head = document.createElement('div');
+        head.className = 'slot-head';
+        head.innerHTML = `<span>#${idx + 1} ${idx === 0 ? '(Left)' : idx === photos.length - 1 ? '(Right)' : ''}</span>`;
+
+        const img = document.createElement('img');
+        img.src = p.url;
+        img.alt = `Photo ${idx + 1}`;
+
+        const btns = document.createElement('div');
+        btns.className = 'slot-btns';
+
+        const leftBtn = document.createElement('button');
+        leftBtn.className = 'mini-btn';
+        leftBtn.textContent = '←';
+        leftBtn.disabled = idx === 0;
+        leftBtn.onclick = () => {
+          [photos[idx - 1], photos[idx]] = [photos[idx], photos[idx - 1]];
+          renderSlots();
+        };
+
+        const rightBtn = document.createElement('button');
+        rightBtn.className = 'mini-btn';
+        rightBtn.textContent = '→';
+        rightBtn.disabled = idx === photos.length - 1;
+        rightBtn.onclick = () => {
+          [photos[idx + 1], photos[idx]] = [photos[idx], photos[idx + 1]];
+          renderSlots();
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'mini-btn';
+        delBtn.textContent = '✕';
+        delBtn.onclick = () => {
+          URL.revokeObjectURL(p.url);
+          photos.splice(idx, 1);
+          renderSlots();
+        };
+
+        btns.append(leftBtn, rightBtn, delBtn);
+        card.append(head, img, btns);
+        slotsContainer.appendChild(card);
       });
+
+      stitchBtn.disabled = photos.length < 2;
+      reverseBtn.disabled = photos.length < 2;
+      clearBtn.disabled = photos.length === 0;
     }
 
-    thumbGrid.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-action]');
-      if (!btn) return;
-      const idx = Number(btn.dataset.idx);
-      const action = btn.dataset.action;
-      if (action === 'left') movePhoto(idx, -1);
-      if (action === 'right') movePhoto(idx, 1);
-      if (action === 'remove') removePhoto(idx);
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+      const space = MAX_PHOTOS - photos.length;
+      for (const f of files.slice(0, space)) {
+        photos.push(await loadImg(f));
+      }
+      fileInput.value = '';
+      renderSlots();
+      if (photos.length >= 2) {
+        statusEl.textContent = `${photos.length} photos ready. Verify Left → Right order (#1 to #${photos.length}) and tap Stitch Photos.`;
+      }
     });
 
-    /**
-     * Extracts a normalized luminance buffer from a canvas at a given scale factor
-     * so lighting exposure differences between adjacent photos don't skew alignment.
-     */
-    function buildLuminanceMap(canvas, scale) {
-      const w = Math.max(16, Math.round(canvas.width * scale));
-      const h = Math.max(16, Math.round(canvas.height * scale));
-      const tmp = document.createElement('canvas');
-      tmp.width = w;
-      tmp.height = h;
-      const ctx = tmp.getContext('2d', { willReadFrequently: true });
+    reverseBtn.addEventListener('click', () => {
+      photos.reverse();
+      renderSlots();
+      statusEl.textContent = 'Reversed photo order.';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      photos.forEach(p => URL.revokeObjectURL(p.url));
+      photos = [];
+      outputBox.classList.remove('visible');
+      saveBtn.style.display = 'none';
+      renderSlots();
+      statusEl.textContent = 'Cleared. Select 2 to 5 overlapping photos above to begin.';
+    });
+
+    function toEdges(canvas, maxDim) {
+      const scale = Math.min(1, maxDim / Math.max(canvas.width, canvas.height));
+      const w = Math.round(canvas.width * scale);
+      const h = Math.round(canvas.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
       ctx.drawImage(canvas, 0, 0, w, h);
-
-      const data = ctx.getImageData(0, 0, w, h).data;
-      const lum = new Float32Array(w * h);
-      let sum = 0;
-
-      for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-        const v = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        lum[p] = v;
-        sum += v;
+      const d = ctx.getImageData(0, 0, w, h).data;
+      const luma = new Float32Array(w * h);
+      for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+        luma[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
       }
-
-      // Normalize zero-mean & unit-variance for exposure invariance
-      const mean = sum / lum.length;
-      let sqSum = 0;
-      for (let i = 0; i < lum.length; i++) {
-        const d = lum[i] - mean;
-        lum[i] = d;
-        sqSum += d * d;
+      const edges = new Float32Array(w * h);
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = y * w + x;
+          const gx = -luma[i - w - 1] + luma[i - w + 1] - 2 * luma[i - 1] + 2 * luma[i + 1] - luma[i + w - 1] + luma[i + w + 1];
+          const gy = -luma[i - w - 1] - 2 * luma[i - w] - luma[i - w + 1] + luma[i + w - 1] + 2 * luma[i + w] + luma[i + w + 1];
+          edges[i] = Math.hypot(gx, gy);
+        }
       }
-      const std = Math.sqrt(sqSum / lum.length) || 1;
-      for (let i = 0; i < lum.length; i++) {
-        lum[i] /= std;
-      }
-
-      return { w, h, lum };
+      c.width = 0; c.height = 0;
+      return { edges, w, h, scale };
     }
 
-    /**
-     * Finds the best (dx, dy) translation placing image B relative to image A
-     * using coarse-to-fine normalized Sum of Absolute Differences (SAD).
-     */
-    function findPairOffset(canvasA, canvasB, direction, maxOverlapRatio) {
-      const coarseScale = 0.22;
-      const fineScale = 0.5;
-
-      const mapA = buildLuminanceMap(canvasA, coarseScale);
-      const mapB = buildLuminanceMap(canvasB, coarseScale);
-
-      const isHoriz = direction === 'horizontal';
-      const minOverlap = Math.max(10, Math.round((isHoriz ? Math.min(mapA.w, mapB.w) : Math.min(mapA.h, mapB.h)) * 0.06));
-      const maxOverlap = Math.max(
-        minOverlap + 4,
-        Math.round((isHoriz ? Math.min(mapA.w, mapB.w) : Math.min(mapA.h, mapB.h)) * maxOverlapRatio)
-      );
-
-      // Search range along primary axis and perpendicular drift
-      const dxMin = isHoriz ? mapA.w - maxOverlap : -Math.round(mapA.w * 0.2);
-      const dxMax = isHoriz ? mapA.w - minOverlap : Math.round(mapA.w * 0.2);
-      const dyMin = isHoriz ? -Math.round(mapA.h * 0.2) : mapA.h - maxOverlap;
-      const dyMax = isHoriz ? Math.round(mapA.h * 0.2) : mapA.h - minOverlap;
-
-      let bestScore = Infinity;
-      let bestDx = isHoriz ? Math.round(mapA.w * 0.75) : 0;
-      let bestDy = isHoriz ? 0 : Math.round(mapA.h * 0.75);
-
-      function evaluateOffset(mA, mB, dx, dy, step) {
-        const xStartA = Math.max(0, dx);
-        const yStartA = Math.max(0, dy);
-        const xEndA = Math.min(mA.w, dx + mB.w);
-        const yEndA = Math.min(mA.h, dy + mB.h);
-
-        const ovW = xEndA - xStartA;
-        const ovH = yEndA - yStartA;
-        if (ovW < 6 || ovH < 6) return Infinity;
-
-        let sad = 0;
-        let samples = 0;
-
-        for (let y = yStartA; y < yEndA; y += step) {
-          const rowA = y * mA.w;
-          const rowB = (y - dy) * mB.w;
-          for (let x = xStartA; x < xEndA; x += step) {
-            const diff = mA.lum[rowA + x] - mB.lum[rowB + (x - dx)];
-            sad += diff < 0 ? -diff : diff;
-            samples++;
-          }
+    function zncc(a, b, dx, dy) {
+      const x0 = Math.max(1, dx), x1 = Math.min(a.w - 1, dx + b.w - 1);
+      const y0 = Math.max(1, dy), y1 = Math.min(a.h - 1, dy + b.h - 1);
+      if (x1 - x0 < 10 || y1 - y0 < 10) return -1;
+      let sA = 0, sB = 0, n = 0;
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          sA += a.edges[y * a.w + x];
+          sB += b.edges[(y - dy) * b.w + (x - dx)];
+          n++;
         }
-
-        if (samples === 0) return Infinity;
-        // Slight penalty on tiny overlaps to avoid false edge matches
-        const areaBonus = 1 + 0.15 * (1 - (ovW * ovH) / (mA.w * mA.h));
-        return (sad / samples) * areaBonus;
       }
+      const mA = sA / n, mB = sB / n;
+      let num = 0, dA = 0, dB = 0;
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const da = a.edges[y * a.w + x] - mA;
+          const db = b.edges[(y - dy) * b.w + (x - dx)] - mB;
+          num += da * db;
+          dA += da * da;
+          dB += db * db;
+        }
+      }
+      const den = Math.sqrt(dA * dB);
+      return den > 1e-6 ? num / den : -1;
+    }
 
-      // Coarse pass
-      for (let dy = dyMin; dy <= dyMax; dy += 2) {
-        for (let dx = dxMin; dx <= dxMax; dx += 2) {
-          const score = evaluateOffset(mapA, mapB, dx, dy, 2);
-          if (score < bestScore) {
-            bestScore = score;
+    function alignPair(canA, canB) {
+      const cA = toEdges(canA, 220);
+      const cB = toEdges(canB, 220);
+
+      let bestScore = -1, bestDx = Math.round(cA.w * 0.45), bestDy = 0;
+      const minDx = Math.round(cA.w * 0.15);
+      const maxDx = Math.round(cA.w * 0.82);
+      const maxDy = Math.round(cA.h * 0.15);
+
+      for (let dx = minDx; dx <= maxDx; dx++) {
+        for (let dy = -maxDy; dy <= maxDy; dy++) {
+          const sc = zncc(cA, cB, dx, dy);
+          if (sc > bestScore) {
+            bestScore = sc;
             bestDx = dx;
             bestDy = dy;
           }
         }
       }
 
-      // Fine pass around coarse optimum
-      const fineA = buildLuminanceMap(canvasA, fineScale);
-      const fineB = buildLuminanceMap(canvasB, fineScale);
-      const ratio = fineScale / coarseScale;
-
-      let fineDx = Math.round(bestDx * ratio);
-      let fineDy = Math.round(bestDy * ratio);
-      let fineBestScore = Infinity;
-      const radius = 8;
-
-      for (let dy = fineDy - radius; dy <= fineDy + radius; dy++) {
-        for (let dx = fineDx - radius; dx <= fineDx + radius; dx++) {
-          const score = evaluateOffset(fineA, fineB, dx, dy, 1);
-          if (score < fineBestScore) {
-            fineBestScore = score;
-            fineDx = dx;
-            fineDy = dy;
+      const fA = toEdges(canA, 480);
+      const fB = toEdges(canB, 480);
+      const ratio = fA.scale / cA.scale;
+      let fDx = Math.round(bestDx * ratio), fDy = Math.round(bestDy * ratio), fScore = -1;
+      for (let dx = fDx - 8; dx <= fDx + 8; dx++) {
+        for (let dy = fDy - 8; dy <= fDy + 8; dy++) {
+          const sc = zncc(fA, fB, dx, dy);
+          if (sc > fScore) {
+            fScore = sc;
+            fDx = dx;
+            fDy = dy;
           }
         }
       }
 
       return {
-        dx: Math.round(fineDx / fineScale),
-        dy: Math.round(fineDy / fineScale)
+        dx: Math.round(fDx / fA.scale),
+        dy: Math.round(fDy / fA.scale),
+        score: Math.max(0, fScore)
       };
     }
 
-    /**
-     * Stitches all queued photos with linear alpha feathering across overlap seams.
-     */
-    async function stitchPanorama() {
-      if (state.photos.length < 2) return;
-
+    stitchBtn.addEventListener('click', async () => {
+      if (photos.length < 2) return;
       stitchBtn.disabled = true;
-      downloadBtn.disabled = true;
-      setStatus('Aligning overlapping regions...');
-
-      // Allow UI paint before heavy pixel math
-      await new Promise((r) => setTimeout(r, 30));
+      statusEl.textContent = `Aligning ${photos.length} photos...`;
+      await new Promise(r => setTimeout(r, 20));
 
       try {
-        const direction = directionSelect.value;
-        const maxOverlapRatio = Number(searchRangeInput.value) / 100;
-        const featherPx = Number(featherWidthInput.value);
-        const cropMode = cropModeSelect.value;
-
-        // Normalize cross-axis dimensions to match the first photo for clean alignment
-        const basePhoto = state.photos[0];
-        const normalized = state.photos.map((p, idx) => {
-          if (idx === 0) {
-            return { canvas: p.canvas, width: p.width, height: p.height };
-          }
-          const scale = direction === 'horizontal'
-            ? basePhoto.height / p.height
-            : basePhoto.width / p.width;
-
-          if (Math.abs(scale - 1) < 0.01) {
-            return { canvas: p.canvas, width: p.width, height: p.height };
-          }
-
-          const nw = Math.round(p.width * scale);
-          const nh = Math.round(p.height * scale);
+        // Normalize all photos to match #1's height and cap working resolution for Safari memory safety
+        const baseH = Math.min(1400, photos[0].img.naturalHeight);
+        const frames = photos.map((p) => {
+          const scale = baseH / p.img.naturalHeight;
+          const w = Math.round(p.img.naturalWidth * scale);
+          const h = baseH;
           const c = document.createElement('canvas');
-          c.width = nw;
-          c.height = nh;
-          c.getContext('2d').drawImage(p.canvas, 0, 0, nw, nh);
-          return { canvas: c, width: nw, height: nh };
+          c.width = w;
+          c.height = h;
+          c.getContext('2d').drawImage(p.img, 0, 0, w, h);
+          return c;
         });
 
-        // Compute global placement coordinates for each image
-        const placements = [{ x: 0, y: 0, img: normalized[0] }];
-        for (let i = 1; i < normalized.length; i++) {
-          setStatus(`Aligning photo ${i + 1} of ${normalized.length}...`);
-          await new Promise((r) => setTimeout(r, 15));
+        const placements = [{ x: 0, y: 0, canvas: frames[0] }];
+        let minScore = 1;
 
+        for (let i = 1; i < frames.length; i++) {
+          statusEl.textContent = `Aligning photo #${i} with #${i + 1}...`;
+          await new Promise(r => setTimeout(r, 15));
+          const { dx, dy, score } = alignPair(frames[i - 1], frames[i]);
+          if (score < minScore) minScore = score;
           const prev = placements[i - 1];
-          const curr = normalized[i];
-          const { dx, dy } = findPairOffset(prev.img.canvas, curr.canvas, direction, maxOverlapRatio);
           placements.push({
             x: prev.x + dx,
             y: prev.y + dy,
-            img: curr
+            canvas: frames[i]
           });
         }
 
-        // Compute bounding box
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const p of placements) {
+        placements.forEach(p => {
           minX = Math.min(minX, p.x);
           minY = Math.min(minY, p.y);
-          maxX = Math.max(maxX, p.x + p.img.width);
-          maxY = Math.max(maxY, p.y + p.img.height);
-        }
-
-        // Shift all coordinates so top-left starts at (0, 0)
-        for (const p of placements) {
+          maxX = Math.max(maxX, p.x + p.canvas.width);
+          maxY = Math.max(maxY, p.y + p.canvas.height);
+        });
+        placements.forEach(p => {
           p.x -= minX;
           p.y -= minY;
-        }
+        });
 
-        const totalW = Math.max(1, Math.round(maxX - minX));
-        const totalH = Math.max(1, Math.round(maxY - minY));
-
-        setStatus('Blending seams...');
-        await new Promise((r) => setTimeout(r, 15));
+        const rawW = maxX - minX;
+        const rawH = maxY - minY;
+        const MAX_AREA = 14000000;
+        const outScale = Math.min(1, Math.sqrt(MAX_AREA / Math.max(1, rawW * rawH)));
+        const outW = Math.round(rawW * outScale);
+        const outH = Math.round(rawH * outScale);
 
         const fullCanvas = document.createElement('canvas');
-        fullCanvas.width = totalW;
-        fullCanvas.height = totalH;
-        const fullCtx = fullCanvas.getContext('2d');
+        fullCanvas.width = outW;
+        fullCanvas.height = outH;
+        const ctx = fullCanvas.getContext('2d');
 
-        // Draw first image directly
-        fullCtx.drawImage(placements[0].img.canvas, placements[0].x, placements[0].y);
+        const layer = document.createElement('canvas');
+        const lCtx = layer.getContext('2d', { willReadFrequently: true });
 
-        // Draw each subsequent image with feathered leading edge
+        // Compute per-channel exposure gains so bright/dark frames blend seamlessly
+        const gains = [{ r: 1, g: 1, b: 1 }];
         for (let i = 1; i < placements.length; i++) {
-          const p = placements[i];
-          const w = p.img.width;
-          const h = p.img.height;
-
-          const layer = document.createElement('canvas');
-          layer.width = w;
-          layer.height = h;
-          const lCtx = layer.getContext('2d');
-          lCtx.drawImage(p.img.canvas, 0, 0);
-
-          if (featherPx > 0) {
-            const ramp = Math.min(featherPx, direction === 'horizontal' ? Math.floor(w * 0.45) : Math.floor(h * 0.45));
-            if (ramp > 1) {
-              lCtx.globalCompositeOperation = 'destination-in';
-              const grad = direction === 'horizontal'
-                ? lCtx.createLinearGradient(0, 0, ramp, 0)
-                : lCtx.createLinearGradient(0, 0, 0, ramp);
-              grad.addColorStop(0, 'rgba(0,0,0,0)');
-              grad.addColorStop(1, 'rgba(0,0,0,1)');
-              lCtx.fillStyle = grad;
-              lCtx.fillRect(0, 0, w, h);
-              lCtx.globalCompositeOperation = 'source-over';
+          const prev = placements[i - 1];
+          const curr = placements[i];
+          const dx = curr.x - prev.x;
+          const dy = curr.y - prev.y;
+          const x0 = Math.max(0, dx), x1 = Math.min(prev.canvas.width, dx + curr.canvas.width);
+          const y0 = Math.max(0, dy), y1 = Math.min(prev.canvas.height, dy + curr.canvas.height);
+          let rA = 0, gA = 0, bA = 0, rB = 0, gB = 0, bB = 0, cnt = 0;
+          if (x1 - x0 > 16 && y1 - y0 > 16) {
+            const dA = prev.canvas.getContext('2d').getImageData(x0, y0, x1 - x0, y1 - y0).data;
+            const dB = curr.canvas.getContext('2d').getImageData(x0 - dx, y0 - dy, x1 - x0, y1 - y0).data;
+            for (let k = 0; k < dA.length; k += 16) {
+              if (dA[k] > 245 && dA[k + 1] > 245 && dA[k + 2] > 245) continue;
+              if (dB[k] > 245 && dB[k + 1] > 245 && dB[k + 2] > 245) continue;
+              rA += dA[k]; gA += dA[k + 1]; bA += dA[k + 2];
+              rB += dB[k]; gB += dB[k + 1]; bB += dB[k + 2];
+              cnt++;
             }
           }
-
-          fullCtx.drawImage(layer, p.x, p.y);
-        }
-
-        // Optional auto-crop to remove jagged vertical/horizontal drift borders
-        let finalCanvas = fullCanvas;
-        if (cropMode === 'crop') {
-          let cropLeft = 0;
-          let cropTop = 0;
-          let cropRight = totalW;
-          let cropBottom = totalH;
-
-          if (direction === 'horizontal') {
-            cropTop = Math.max(0, ...placements.map((p) => p.y));
-            cropBottom = Math.min(totalH, ...placements.map((p) => p.y + p.img.height));
+          const prevG = gains[i - 1];
+          const clamp = (v) => Math.max(0.72, Math.min(1.38, v));
+          if (cnt > 25) {
+            gains.push({
+              r: clamp(prevG.r * clamp(rA / Math.max(1, rB))),
+              g: clamp(prevG.g * clamp(gA / Math.max(1, gB))),
+              b: clamp(prevG.b * clamp(bA / Math.max(1, bB)))
+            });
           } else {
-            cropLeft = Math.max(0, ...placements.map((p) => p.x));
-            cropRight = Math.min(totalW, ...placements.map((p) => p.x + p.img.width));
-          }
-
-          const cw = cropRight - cropLeft;
-          const ch = cropBottom - cropTop;
-          if (cw > 20 && ch > 20) {
-            const cropped = document.createElement('canvas');
-            cropped.width = cw;
-            cropped.height = ch;
-            cropped.getContext('2d').drawImage(fullCanvas, cropLeft, cropTop, cw, ch, 0, 0, cw, ch);
-            finalCanvas = cropped;
+            gains.push({ ...prevG });
           }
         }
 
-        // Render into visible output canvas
-        outputCanvas.width = finalCanvas.width;
-        outputCanvas.height = finalCanvas.height;
-        outputCanvas.getContext('2d').drawImage(finalCanvas, 0, 0);
+        for (let i = 0; i < placements.length; i++) {
+          const p = placements[i];
+          const px = Math.round(p.x * outScale);
+          const py = Math.round(p.y * outScale);
+          const w = Math.round(p.canvas.width * outScale);
+          const h = Math.round(p.canvas.height * outScale);
 
-        outputCanvas.style.display = 'block';
-        emptyPreviewMsg.style.display = 'none';
-        outputDimsPill.textContent = `${finalCanvas.width} × ${finalCanvas.height} px`;
+          if (i === 0) {
+            ctx.drawImage(p.canvas, px, py, w, h);
+            continue;
+          }
 
-        state.hasResult = true;
-        downloadBtn.disabled = false;
-        setStatus(`Stitched ${state.photos.length} photos (${finalCanvas.width} × ${finalCanvas.height} px)!`, 'success');
+          layer.width = w;
+          layer.height = h;
+          lCtx.clearRect(0, 0, w, h);
+          lCtx.drawImage(p.canvas, 0, 0, w, h);
+
+          // Apply exposure matching
+          const g = gains[i];
+          if (Math.abs(g.r - 1) > 0.015 || Math.abs(g.g - 1) > 0.015 || Math.abs(g.b - 1) > 0.015) {
+            const imgData = lCtx.getImageData(0, 0, w, h);
+            const d = imgData.data;
+            for (let k = 0; k < d.length; k += 4) {
+              d[k]     = Math.min(255, d[k] * g.r);
+              d[k + 1] = Math.min(255, d[k + 1] * g.g);
+              d[k + 2] = Math.min(255, d[k + 2] * g.b);
+            }
+            lCtx.putImageData(imgData, 0, 0);
+          }
+
+          const prev = placements[i - 1];
+          const overlapW = Math.max(40, Math.min(Math.floor(w * 0.85), Math.round((prev.x + prev.canvas.width - p.x) * outScale)));
+
+          lCtx.globalCompositeOperation = 'destination-in';
+          const grad = lCtx.createLinearGradient(0, 0, overlapW, 0);
+          for (let s = 0; s <= 16; s++) {
+            const t = s / 16;
+            const alpha = 0.5 - 0.5 * Math.cos(Math.PI * t);
+            grad.addColorStop(t, `rgba(0,0,0,${alpha.toFixed(3)})`);
+          }
+          lCtx.fillStyle = grad;
+          lCtx.fillRect(0, 0, w, h);
+          lCtx.globalCompositeOperation = 'source-over';
+
+          ctx.drawImage(layer, px, py);
+        }
+
+        // Auto-crop top & bottom stepped edges so the final panorama has clean rectangular borders
+        const cropTop = Math.max(0, ...placements.map(p => Math.round(p.y * outScale)));
+        const cropBottom = Math.min(outH, ...placements.map(p => Math.round((p.y + p.canvas.height) * outScale)));
+        const finalH = cropBottom - cropTop > 60 ? cropBottom - cropTop : outH;
+        const srcY = cropBottom - cropTop > 60 ? cropTop : 0;
+
+        outCanvas.width = outW;
+        outCanvas.height = finalH;
+        outCanvas.getContext('2d').drawImage(fullCanvas, 0, srcY, outW, finalH, 0, 0, outW, finalH);
+
+        // Clean up temporary canvases
+        fullCanvas.width = 0; fullCanvas.height = 0;
+        layer.width = 0; layer.height = 0;
+        frames.forEach(c => { c.width = 0; c.height = 0; });
+
+        saveBtn.href = outCanvas.toDataURL('image/jpeg', 0.92);
+        saveBtn.style.display = 'inline-flex';
+        outputBox.classList.add('visible');
+        statusEl.textContent = `Stitched ${photos.length} photos! Output: ${outW}×${finalH}px (min match ${(minScore * 100).toFixed(0)}%).`;
       } catch (err) {
-        console.error(err);
-        setStatus(`Stitching failed: ${err.message || 'Unknown error'}`, 'error');
+        statusEl.textContent = `Stitching failed: ${err.message}`;
       } finally {
-        stitchBtn.disabled = state.photos.length < 2;
+        stitchBtn.disabled = photos.length < 2;
       }
-    }
-
-    stitchBtn.addEventListener('click', stitchPanorama);
-
-    // Download stitched result as PNG
-    downloadBtn.addEventListener('click', () => {
-      if (!state.hasResult) return;
-      outputCanvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `panorama-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      }, 'image/png');
     });
 
-    // Register real Service Worker file (./sw.js) when hosted over http(s) so iOS Safari caches it offline
-    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+    // Register Service Worker so the app works 100% offline once cached
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
-
-    // Initialize initial UI state immediately
-    updateUI();
   </script>
 </body>
 </html>
