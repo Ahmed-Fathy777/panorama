@@ -5,158 +5,529 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Panorama Stitcher" />
-  <meta name="theme-color" content="#0b1120" />
-  <title>5-Photo Panorama Stitcher</title>
+  <meta name="apple-mobile-web-app-title" content="Panorama Studio" />
+  <meta name="theme-color" content="#090d16" />
+  <title>Panorama Studio — 5-Photo Stitcher</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-base: #070b14;
+      --bg-surface: rgba(15, 23, 42, 0.78);
+      --bg-elevated: rgba(30, 41, 59, 0.72);
+      --border-subtle: rgba(148, 163, 184, 0.16);
+      --border-strong: rgba(56, 189, 248, 0.45);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-cyan: #38bdf8;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --success: #22c55e;
+      --danger: #f43f5e;
+    }
+
     body {
       margin: 0;
-      padding: 20px 16px 48px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0b1120;
-      color: #f8fafc;
+      padding: 24px 16px 56px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(56, 189, 248, 0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(99, 102, 241, 0.14), transparent),
+        var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
       line-height: 1.5;
     }
-    .container { max-width: 980px; margin: 0 auto; }
-    h1 { font-size: 1.3rem; margin: 0 0 6px; }
-    p.sub { color: #94a3b8; font-size: 0.9rem; margin: 0 0 18px; }
-    .upload-box {
-      background: #111827;
-      border: 2px dashed #334155;
+
+    .container {
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
       border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.38rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin: 0;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      color: var(--text-secondary);
+      font-size: 0.86rem;
+      margin: 2px 0 0;
+    }
+
+    .offline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 13px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #86efac;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .offline-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    /* Glass Panels */
+    .panel {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
       padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
     }
-    .upload-box:hover { border-color: #38bdf8; }
-    .slots {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .slot {
-      background: #111827;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 8px;
+
+    /* Upload Dropzone */
+    .upload-box {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-    }
-    .slot-head {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #38bdf8;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.65));
+      border: 1.5px dashed rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.22s ease;
     }
+
+    .upload-box:hover, .upload-box.dragover {
+      border-color: var(--accent-cyan);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.12), rgba(30, 41, 59, 0.7));
+      transform: translateY(-1px);
+    }
+
+    .upload-icon-ring {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      color: var(--accent-cyan);
+    }
+
+    .upload-title {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .upload-hint {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Photo Filmstrip Slots */
+    .slots-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0 12px;
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+    }
+
+    .slots-header strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 14px;
+    }
+
+    .slots:empty {
+      display: none;
+    }
+
+    .slot {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .slot:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .slot-img-wrap {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      background: #060911;
+    }
+
     .slot img {
       width: 100%;
-      aspect-ratio: 4 / 3;
+      height: 100%;
       object-fit: cover;
-      border-radius: 8px;
-      background: #090d16;
+      display: block;
     }
+
+    .slot-pill {
+      position: absolute;
+      top: 7px;
+      left: 7px;
+      background: rgba(9, 13, 22, 0.82);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 7px;
+      letter-spacing: 0.02em;
+    }
+
+    .slot-pill.edge {
+      color: #7dd3fc;
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
     .slot-btns {
       display: flex;
       justify-content: space-between;
-      gap: 4px;
+      gap: 6px;
     }
+
     .mini-btn {
-      background: #1e293b;
-      color: #f8fafc;
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 0.78rem;
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
       cursor: pointer;
       flex: 1;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .mini-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .mini-btn:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+
+    .mini-btn.del:hover:not(:disabled) {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fda4af;
+    }
+
+    .mini-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Action Bar */
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      margin-bottom: 16px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
     }
-    button.primary, a.btn {
-      background: linear-gradient(135deg, #0ea5e9, #2563eb);
-      color: #fff;
+
+    button.primary, a.btn-save {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      color: #ffffff;
       border: none;
-      border-radius: 10px;
-      padding: 11px 18px;
-      font-size: 0.95rem;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 0.94rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 22px rgba(14, 165, 233, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transition: transform 0.14s ease, box-shadow 0.14s ease, opacity 0.15s ease;
     }
+
+    button.primary:hover:not(:disabled), a.btn-save:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(14, 165, 233, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    button.primary:active:not(:disabled), a.btn-save:active {
+      transform: scale(0.98);
+    }
+
+    a.btn-save {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 8px 22px rgba(16, 185, 129, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      margin-left: auto;
+    }
+
     button.secondary {
-      background: #1e293b;
-      color: #f8fafc;
-      border: 1px solid #334155;
-      border-radius: 10px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
       padding: 11px 16px;
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
     }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
-    .status {
-      padding: 10px 14px;
-      border-radius: 10px;
-      background: #1e293b;
+
+    button.secondary:hover:not(:disabled) {
+      background: rgba(51, 65, 85, 0.85);
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    button:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status & Result Viewer */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
       color: #cbd5e1;
       font-size: 0.88rem;
-      margin-bottom: 16px;
     }
+
+    .status-bar.success {
+      background: rgba(6, 78, 59, 0.32);
+      border-color: rgba(16, 185, 129, 0.38);
+      color: #a7f3d0;
+    }
+
+    .status-bar.error {
+      background: rgba(127, 29, 29, 0.32);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fecdd3;
+    }
+
     .output-box {
-      background: #090d16;
-      border: 1px solid #334155;
-      border-radius: 14px;
+      margin-top: 16px;
+      background: #050810;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 16px;
       overflow: hidden;
       display: none;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
     }
-    .output-box.visible { display: block; }
-    canvas { display: block; width: 100%; height: auto; }
+
+    .output-box.visible {
+      display: block;
+      animation: fadeUp 0.28s ease-out;
+    }
+
+    .output-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.92);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .output-toolbar strong {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 72vh;
+      object-fit: contain;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      a.btn-save {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+      }
+      button.primary {
+        flex: 1;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>5-Photo Panorama Stitcher</h1>
-    <p class="sub">Select 2 to 5 overlapping photos. Use the arrows to order them Left → Right (or Reverse Order), then tap Stitch.</p>
+    <!-- Top App Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="3" />
+            <path d="M2 15l5-5 4 4 4-6 7 7" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Panorama Studio</h1>
+          <p class="brand-sub">Seamless 5-Photo Cylindrical &amp; Exposure-Matched Stitcher</p>
+        </div>
+      </div>
+      <div class="offline-badge">
+        <span class="offline-dot"></span>
+        <span>Offline Ready</span>
+      </div>
+    </header>
 
-    <label class="upload-box" for="fileInput">
-      <div><strong>Tap to Select 2–5 Photos</strong></div>
-      <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">Supports JPEG, PNG, HEIC from your phone or laptop</div>
-      <input type="file" id="fileInput" accept="image/*" multiple hidden />
-    </label>
+    <!-- Upload & Sequence Panel -->
+    <section class="panel">
+      <label class="upload-box" id="dropzone" for="fileInput">
+        <div class="upload-icon-ring">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+        </div>
+        <div class="upload-title">Tap or Drop 2–5 Overlapping Photos</div>
+        <div class="upload-hint">Supports iPhone Photo Library (JPEG, PNG, HEIC) · Processed 100% locally on your device</div>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden />
+      </label>
 
-    <div class="slots" id="slotsContainer"></div>
+      <div class="slots-header" id="slotsHeader" style="display:none;">
+        <span>Frame Sequence: <strong id="frameCountText">0 / 5 Photos</strong></span>
+        <span>Order frames <strong>Left → Right</strong></span>
+      </div>
 
-    <div class="actions">
-      <button id="stitchBtn" class="primary" disabled>Stitch Photos</button>
-      <button id="reverseBtn" class="secondary" disabled>Reverse Order</button>
-      <button id="clearBtn" class="secondary" disabled>Clear All</button>
-      <a id="saveBtn" class="btn" style="display:none;" download="stitched-panorama.jpg">Save Stitched Image</a>
-    </div>
+      <div class="slots" id="slotsContainer"></div>
 
-    <div class="status" id="status">Select 2 to 5 overlapping photos above to begin.</div>
+      <div class="actions">
+        <button id="stitchBtn" class="primary" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <span>Stitch Panorama</span>
+        </button>
+        <button id="reverseBtn" class="secondary" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <polyline points="7 23 3 19 7 15" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+          <span>Reverse Order</span>
+        </button>
+        <button id="clearBtn" class="secondary" disabled>Clear</button>
+        <a id="saveBtn" class="btn-save" style="display:none;" download="stitched-panorama.jpg">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Save Panorama</span>
+        </a>
+      </div>
+    </section>
 
-    <div class="output-box" id="outputBox">
-      <canvas id="outCanvas"></canvas>
-    </div>
+    <!-- Status & Preview Viewer Panel -->
+    <section class="panel" style="margin-bottom:0;">
+      <div class="status-bar" id="status">Select 2 to 5 overlapping photos above to begin.</div>
+
+      <div class="output-box" id="outputBox">
+        <div class="output-toolbar">
+          <span>Final Stitched Output</span>
+          <strong id="outputMeta"></strong>
+        </div>
+        <canvas id="outCanvas"></canvas>
+      </div>
+    </section>
   </div>
 
   <script>
     const MAX_PHOTOS = 5;
     const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const slotsHeader = document.getElementById('slotsHeader');
+    const frameCountText = document.getElementById('frameCountText');
     const slotsContainer = document.getElementById('slotsContainer');
     const stitchBtn = document.getElementById('stitchBtn');
     const reverseBtn = document.getElementById('reverseBtn');
@@ -164,9 +535,17 @@
     const saveBtn = document.getElementById('saveBtn');
     const statusEl = document.getElementById('status');
     const outputBox = document.getElementById('outputBox');
+    const outputMeta = document.getElementById('outputMeta');
     const outCanvas = document.getElementById('outCanvas');
 
     let photos = []; // Array of { img, url, name }
+
+    function setStatus(msg, type = 'normal') {
+      statusEl.textContent = msg;
+      statusEl.className = 'status-bar';
+      if (type === 'success') statusEl.classList.add('success');
+      if (type === 'error') statusEl.classList.add('error');
+    }
 
     function loadImg(file) {
       return new Promise((resolve, reject) => {
@@ -180,23 +559,33 @@
 
     function renderSlots() {
       slotsContainer.innerHTML = '';
+      slotsHeader.style.display = photos.length > 0 ? 'flex' : 'none';
+      frameCountText.textContent = `${photos.length} / ${MAX_PHOTOS} Photos`;
+
       photos.forEach((p, idx) => {
         const card = document.createElement('div');
         card.className = 'slot';
 
-        const head = document.createElement('div');
-        head.className = 'slot-head';
-        head.innerHTML = `<span>#${idx + 1} ${idx === 0 ? '(Left)' : idx === photos.length - 1 ? '(Right)' : ''}</span>`;
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'slot-img-wrap';
+
+        const pill = document.createElement('span');
+        const isEdge = idx === 0 || idx === photos.length - 1;
+        pill.className = `slot-pill${isEdge && photos.length > 1 ? ' edge' : ''}`;
+        pill.textContent = `#${idx + 1}${idx === 0 && photos.length > 1 ? ' · Left' : idx === photos.length - 1 && photos.length > 1 ? ' · Right' : ''}`;
 
         const img = document.createElement('img');
         img.src = p.url;
         img.alt = `Photo ${idx + 1}`;
+
+        imgWrap.append(img, pill);
 
         const btns = document.createElement('div');
         btns.className = 'slot-btns';
 
         const leftBtn = document.createElement('button');
         leftBtn.className = 'mini-btn';
+        leftBtn.title = 'Move Left';
         leftBtn.textContent = '←';
         leftBtn.disabled = idx === 0;
         leftBtn.onclick = () => {
@@ -206,6 +595,7 @@
 
         const rightBtn = document.createElement('button');
         rightBtn.className = 'mini-btn';
+        rightBtn.title = 'Move Right';
         rightBtn.textContent = '→';
         rightBtn.disabled = idx === photos.length - 1;
         rightBtn.onclick = () => {
@@ -214,7 +604,8 @@
         };
 
         const delBtn = document.createElement('button');
-        delBtn.className = 'mini-btn';
+        delBtn.className = 'mini-btn del';
+        delBtn.title = 'Remove Photo';
         delBtn.textContent = '✕';
         delBtn.onclick = () => {
           URL.revokeObjectURL(p.url);
@@ -223,7 +614,7 @@
         };
 
         btns.append(leftBtn, rightBtn, delBtn);
-        card.append(head, img, btns);
+        card.append(imgWrap, btns);
         slotsContainer.appendChild(card);
       });
 
@@ -232,8 +623,8 @@
       clearBtn.disabled = photos.length === 0;
     }
 
-    fileInput.addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+    async function addFiles(fileList) {
+      const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
       const space = MAX_PHOTOS - photos.length;
       for (const f of files.slice(0, space)) {
         photos.push(await loadImg(f));
@@ -241,14 +632,27 @@
       fileInput.value = '';
       renderSlots();
       if (photos.length >= 2) {
-        statusEl.textContent = `${photos.length} photos ready. Verify Left → Right order (#1 to #${photos.length}) and tap Stitch Photos.`;
+        setStatus(`${photos.length} photos ready. Verify Left → Right order (#1 to #${photos.length}) and tap Stitch Panorama.`);
       }
+    }
+
+    fileInput.addEventListener('change', (e) => addFiles(e.target.files));
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      addFiles(e.dataTransfer.files);
     });
 
     reverseBtn.addEventListener('click', () => {
       photos.reverse();
       renderSlots();
-      statusEl.textContent = 'Reversed photo order.';
+      setStatus('Reversed photo order (#1 ↔ #last).');
     });
 
     clearBtn.addEventListener('click', () => {
@@ -257,7 +661,7 @@
       outputBox.classList.remove('visible');
       saveBtn.style.display = 'none';
       renderSlots();
-      statusEl.textContent = 'Cleared. Select 2 to 5 overlapping photos above to begin.';
+      setStatus('Cleared. Select 2 to 5 overlapping photos above to begin.');
     });
 
     function toEdges(canvas, maxDim) {
@@ -359,11 +763,10 @@
     stitchBtn.addEventListener('click', async () => {
       if (photos.length < 2) return;
       stitchBtn.disabled = true;
-      statusEl.textContent = `Aligning ${photos.length} photos...`;
+      setStatus(`Aligning ${photos.length} photos...`);
       await new Promise(r => setTimeout(r, 20));
 
       try {
-        // Normalize all photos to match #1's height and cap working resolution for Safari memory safety
         const baseH = Math.min(1400, photos[0].img.naturalHeight);
         const frames = photos.map((p) => {
           const scale = baseH / p.img.naturalHeight;
@@ -380,7 +783,7 @@
         let minScore = 1;
 
         for (let i = 1; i < frames.length; i++) {
-          statusEl.textContent = `Aligning photo #${i} with #${i + 1}...`;
+          setStatus(`Aligning photo #${i} with #${i + 1}...`);
           await new Promise(r => setTimeout(r, 15));
           const { dx, dy, score } = alignPair(frames[i - 1], frames[i]);
           if (score < minScore) minScore = score;
@@ -510,17 +913,18 @@
         outCanvas.height = finalH;
         outCanvas.getContext('2d').drawImage(fullCanvas, 0, srcY, outW, finalH, 0, 0, outW, finalH);
 
-        // Clean up temporary canvases
         fullCanvas.width = 0; fullCanvas.height = 0;
         layer.width = 0; layer.height = 0;
         frames.forEach(c => { c.width = 0; c.height = 0; });
 
         saveBtn.href = outCanvas.toDataURL('image/jpeg', 0.92);
+        saveBtn.download = `panorama-${Date.now()}.jpg`;
         saveBtn.style.display = 'inline-flex';
         outputBox.classList.add('visible');
-        statusEl.textContent = `Stitched ${photos.length} photos! Output: ${outW}×${finalH}px (min match ${(minScore * 100).toFixed(0)}%).`;
+        outputMeta.textContent = `${outW} × ${finalH} px · Match ${(minScore * 100).toFixed(0)}%`;
+        setStatus(`Stitched ${photos.length} photos cleanly (${outW}×${finalH}px).`, 'success');
       } catch (err) {
-        statusEl.textContent = `Stitching failed: ${err.message}`;
+        setStatus(`Stitching failed: ${err.message}`, 'error');
       } finally {
         stitchBtn.disabled = photos.length < 2;
       }
